@@ -12,13 +12,14 @@ export default [
   ...compat.extends('airbnb-base'),
   ...compat.extends('prettier'),
   {
-    ignores: ['eslint.config.mjs'],
+    ignores: ['dist', 'eslint.config.mjs'],
   },
   {
-    files: ['src/**/*.{js,mjs,cjs,ts}'],
+    files: ['src/**/*.{js,mjs,cjs,ts}', 'tests/**/*.{js,mjs,cjs,ts}'],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.eslint.json',
+        tsconfigRootDir: __dirname,
         sourceType: 'module',
       },
     },
@@ -28,6 +29,7 @@ export default [
       'import/extensions': ['error', 'ignorePackages', { ts: 'never' }],
       'no-console': 'warn',
       'import/no-extraneous-dependencies': 'off',
+      'no-use-before-define': 'off',
     },
     settings: {
       'import/resolver': {
