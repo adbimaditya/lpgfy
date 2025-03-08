@@ -25,16 +25,20 @@ const { phoneNumber, pin, nationalityID } = config;
   await login(page, { phoneNumber, pin });
   await closeCarousel(page);
 
-  const { type, familyID } = await verifyNationalityID(page, nationalityID);
-  const quota = await fetchQuota(page, {
-    nationalityID,
-    familyID,
-    type,
-  });
+  const verifyResponse = await verifyNationalityID(page, nationalityID);
+  if (!verifyResponse) {
+    await page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
+  } else {
+    const { familyID, type } = verifyResponse;
+    const quota = await fetchQuota(page, {
+      nationalityID,
+      familyID,
+      type,
+    });
 
-  await writeFileAsync('public/data/quota.json', quota);
-
-  await page.getByTestId('btnChangeBuyer').click();
+    await writeFileAsync('public/data/quota.json', quota);
+    await page.getByTestId('btnChangeBuyer').click();
+  }
 
   await logout(page);
 

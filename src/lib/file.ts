@@ -9,7 +9,6 @@ export async function readFileAsync(filePath: string) {
 
 export async function writeFileAsync(filePath: string, data: any) {
   const directory = path.dirname(filePath);
-
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory, { recursive: true });
   }

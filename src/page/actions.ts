@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import status from 'http-status';
 
 import type { FetchQuotaArgs, LoginArgs } from '../lib/args.ts';
 import { QUOTA_ENDPOINT, VERIFY_NATIONALITY_ID_ENDPOINT } from '../lib/constants.ts';
@@ -35,6 +36,10 @@ export async function verifyNationalityID(page: Page, nationalityID: string) {
   await page.getByRole('button', { name: 'Cek' }).click();
 
   const response = await responsePromise;
+  if (!response.ok() && response.status() === status.NOT_FOUND) {
+    return null;
+  }
+
   const apiResponse = await response.json();
   const customerResponse = customerResponseSchema.parse(apiResponse);
 
