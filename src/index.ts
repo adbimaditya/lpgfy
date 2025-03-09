@@ -1,8 +1,14 @@
 import { chromium } from '@playwright/test';
 
 import config from './config/index.ts';
-import { writeFileAsync } from './lib/file.ts';
-import { closeCarousel, fetchQuota, login, logout, verifyNationalityID } from './page/actions.ts';
+import { writeFileAsync } from './libs/file.ts';
+import {
+  closeCarousel,
+  fetchQuota,
+  login,
+  logout,
+  verifyNationalityID,
+} from './libs/my-pertamina.ts';
 
 const { phoneNumber, pin, nationalityID } = config;
 
@@ -25,18 +31,13 @@ const { phoneNumber, pin, nationalityID } = config;
   await login(page, { phoneNumber, pin });
   await closeCarousel(page);
 
-  const verifyResponse = await verifyNationalityID(page, nationalityID);
-  if (!verifyResponse) {
+  const customer = await verifyNationalityID(page, nationalityID);
+  if (!customer) {
     await page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
   } else {
-    const { familyID, type } = verifyResponse;
-    const quota = await fetchQuota(page, {
-      nationalityID,
-      familyID,
-      type,
-    });
+    const quota = await fetchQuota(page, customer);
 
-    await writeFileAsync('public/data/quota.json', quota);
+    await writeFileAsync(`public/data/${nationalityID}-quota.json`, quota);
     await page.getByTestId('btnChangeBuyer').click();
   }
 

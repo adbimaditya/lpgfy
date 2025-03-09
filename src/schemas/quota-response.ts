@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createResponseSchema } from './response.ts';
 
-const customerQuotaData = z.object({
+export const customerQuotaData = z.object({
   quotaRemaining: z.object({
     daily: z.number(),
     monthly: z.number(),

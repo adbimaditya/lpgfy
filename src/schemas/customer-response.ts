@@ -2,8 +2,10 @@ import { z } from 'zod';
 
 import { createResponseSchema } from './response.ts';
 
-const customerTypeSchema = z.object({
-  name: z.string(),
+export const customerTypeName = z.enum(['Rumah Tangga', 'Usaha Mikro']);
+
+export const customerTypeSchema = z.object({
+  name: customerTypeName,
   sourceTypeId: z.union([z.literal(1), z.literal(99)]),
   status: z.union([z.literal(1), z.literal(2)]),
   verifications: z.array(z.unknown()),
@@ -12,7 +14,7 @@ const customerTypeSchema = z.object({
   isQuotaValid: z.boolean(),
 });
 
-const customerDataSchema = z.object({
+export const customerDataSchema = z.object({
   nationalityId: z.string(),
   familyId: z.string(),
   familyIdEncrypted: z.string(),
@@ -34,4 +36,5 @@ const customerDataSchema = z.object({
 
 export const customerResponseSchema = createResponseSchema(customerDataSchema);
 
+export type CustomerType = z.infer<typeof customerTypeName>;
 export type CustomerResponse = z.infer<typeof customerResponseSchema>;
