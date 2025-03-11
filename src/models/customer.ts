@@ -1,20 +1,17 @@
 import type { CustomerArgs } from '../libs/args.ts';
-import type { CustomerDTO } from '../schemas/customer-dto.ts';
-import type { CustomerResponse, CustomerType } from '../schemas/customer-response.ts';
+import type { CustomerDTO, CustomerFlags, CustomerType } from '../schemas/customer.ts';
 
 export default class Customer {
   private nationalityID: string;
-  private encryptedFamilyID: string;
+  private encryptedFamilyID?: string;
   private types: CustomerType[];
-  private selectedType: CustomerType;
+  private flags: CustomerFlags;
 
-  constructor({ nationalityID, encryptedFamilyID, types }: CustomerArgs) {
-    const [type] = types;
-
+  constructor({ nationalityID, encryptedFamilyID, types, flags }: CustomerArgs) {
     this.nationalityID = nationalityID;
     this.encryptedFamilyID = encryptedFamilyID;
     this.types = types;
-    this.selectedType = type;
+    this.flags = flags;
   }
 
   public getNationalityID() {
@@ -25,12 +22,12 @@ export default class Customer {
     return this.encryptedFamilyID;
   }
 
-  public getSelectedType() {
-    return this.selectedType;
-  }
-
   public hasMultipleTypes() {
     return this.types.length >= 2;
+  }
+
+  public getFlags() {
+    return this.flags;
   }
 
   public toDTO(): CustomerDTO {
@@ -38,18 +35,7 @@ export default class Customer {
       nationalityID: this.nationalityID,
       encryptedFamilyID: this.encryptedFamilyID,
       types: this.types,
-    };
-  }
-
-  public static fromResponse(response: CustomerResponse): Customer {
-    return new Customer(this.fromResponseToDTO(response));
-  }
-
-  private static fromResponseToDTO(response: CustomerResponse): CustomerDTO {
-    return {
-      nationalityID: response.data.nationalityId,
-      encryptedFamilyID: response.data.familyIdEncrypted,
-      types: response.data.customerTypes.map((type) => type.name),
+      flags: this.flags,
     };
   }
 }

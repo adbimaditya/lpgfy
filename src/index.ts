@@ -1,16 +1,12 @@
 import { chromium } from '@playwright/test';
 
 import config from './config/index.ts';
-import { writeFileAsync } from './libs/file.ts';
-import {
-  closeCarousel,
-  fetchQuota,
-  login,
-  logout,
-  verifyNationalityID,
-} from './libs/my-pertamina.ts';
+import { LOGIN_URL, VERIFY_NATIONALITY_ID_DELAY } from './libs/constants.ts';
+import { readFileAsync } from './libs/file.ts';
+import { closeCarousel, login, logout, scrapQuota } from './libs/my-pertamina.ts';
+import { nationalityIDsSchema } from './schemas/customer.ts';
 
-const { phoneNumber, pin, nationalityID } = config;
+const { phoneNumber, pin } = config;
 
 (async () => {
   const browser = await chromium.launch({
@@ -24,24 +20,22 @@ const { phoneNumber, pin, nationalityID } = config;
 
   const page = await context.newPage();
 
-  await page.goto('https://subsiditepatlpg.mypertamina.id/merchant/auth/login', {
+  await page.goto(LOGIN_URL, {
     waitUntil: 'networkidle',
   });
 
-  await login(page, { phoneNumber, pin });
-  await closeCarousel(page);
+  await login({ page, phoneNumber, pin });
+  await closeCarousel({ page });
 
-  const customer = await verifyNationalityID(page, nationalityID);
-  if (!customer) {
-    await page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
-  } else {
-    const quota = await fetchQuota(page, customer);
+  const nationalityIDsJSON = await readFileAsync('public/data/nationality-ids.json');
+  const nationalityIDs = nationalityIDsSchema.parse(nationalityIDsJSON);
 
-    await writeFileAsync(`public/data/${nationalityID}-quota.json`, quota);
-    await page.getByTestId('btnChangeBuyer').click();
+  for (const nationalityID of nationalityIDs) {
+    await scrapQuota({ page, nationalityID });
+    await page.waitForTimeout(VERIFY_NATIONALITY_ID_DELAY);
   }
 
-  await logout(page);
+  await logout({ page });
 
   await page.close();
   await context.close();

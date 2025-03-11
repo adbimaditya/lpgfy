@@ -39,6 +39,8 @@ export default [
       'import/extensions': 'off',
       'import/prefer-default-export': 'off',
       'lines-between-class-members': 'off',
+      'no-restricted-syntax': 'off',
+      'no-await-in-loop': 'off',
     },
     settings: {
       'import/resolver': {

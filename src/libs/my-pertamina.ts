@@ -1,34 +1,58 @@
-import type { Page } from '@playwright/test';
 import status from 'http-status';
 
-import Customer from '../models/customer.ts';
 import Quota from '../models/quota.ts';
-import { customerResponseSchema, type CustomerType } from '../schemas/customer-response.ts';
-import { quotaResponseSchema } from '../schemas/quota-response.ts';
+import { customerResponseSchema } from '../schemas/customer.ts';
+import { quotaResponseSchema, quotasDTOSchema } from '../schemas/quota.ts';
 
-import type { LoginArgs } from './args.ts';
-import { QUOTA_ENDPOINT, VERIFY_NATIONALITY_ID_ENDPOINT } from './constants.ts';
-import { encodeCustomerType } from './utils.ts';
+import type {
+  CloseCarouselArgs,
+  FetchQuotaArgs,
+  LoginArgs,
+  LogoutArgs,
+  ScrapQuotaArgs,
+  VerifyNationalityIDArgs,
+} from './args.ts';
+import { QUOTA_ENDPOINT, QUOTAS_FILE_PATH, VERIFY_NATIONALITY_ID_ENDPOINT } from './constants.ts';
+import { responseToCustomerDTO, responseToQuotaDTO } from './dto.ts';
+import { createCustomer, createQuota } from './factory.ts';
+import { readFileAsync, writeFileAsync } from './file.ts';
+import type { ICustomerType } from './interfaces.ts';
+import { encodeCustomerType, getUniqueQuotasDTO } from './utils.ts';
 
-export async function login(page: Page, { phoneNumber, pin }: LoginArgs) {
+export async function login({ page, phoneNumber, pin }: LoginArgs) {
   await page.getByPlaceholder('Email atau No. Handphone').fill(phoneNumber);
   await page.getByPlaceholder('PIN (6-digit)').fill(pin);
   await page.getByRole('button', { name: 'Masuk' }).click();
 }
 
-export async function logout(page: Page) {
+export async function logout({ page }: LogoutArgs) {
   await page.getByTestId('btnLogout').click();
   await page.getByRole('dialog').getByRole('button', { name: 'Keluar' }).click();
 }
 
-export async function closeCarousel(page: Page) {
+export async function closeCarousel({ page }: CloseCarouselArgs) {
   await page.getByTestId(/btnClose*/).click();
 }
 
-export async function verifyNationalityID(
-  page: Page,
-  nationalityID: string,
-): Promise<Customer | null> {
+export async function scrapQuota({ page, nationalityID }: ScrapQuotaArgs) {
+  const customer = await verifyNationalityID({ page, nationalityID });
+  if (!customer) {
+    return;
+  }
+
+  const quota = await customer.getQuota(page);
+  if (!quota) {
+    return;
+  }
+
+  await streamQuotas(quota);
+  await page.getByTestId('btnChangeBuyer').click();
+}
+
+export async function verifyNationalityID({
+  page,
+  nationalityID,
+}: VerifyNationalityIDArgs): Promise<ICustomerType | null> {
   const responsePromise = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
@@ -37,47 +61,65 @@ export async function verifyNationalityID(
   );
 
   await page.getByPlaceholder('Masukkan 16 digit NIK KTP Pelanggan').fill(nationalityID);
+  await page.getByRole('heading', { name: 'NIK KTP Pelanggan' }).click();
   await page.getByRole('button', { name: 'Cek' }).click();
 
   const response = await responsePromise;
   if (!response.ok() && response.status() === status.NOT_FOUND) {
+    await page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
+
+    return null;
+  }
+
+  if (!response.ok() && response.status() === status.BAD_REQUEST) {
     return null;
   }
 
   const apiResponse = await response.json();
   const customerResponse = customerResponseSchema.parse(apiResponse);
-  const customer = Customer.fromResponse({
+  const customerDTO = responseToCustomerDTO({
     ...customerResponse,
     data: { ...customerResponse.data, nationalityId: nationalityID },
   });
 
-  if (customer.hasMultipleTypes()) {
-    await selectCustomerType(page, customer.getSelectedType());
-  }
+  const [selectedType] = customerDTO.types;
+  const customer = createCustomer({ args: customerDTO, selectedType });
 
   return customer;
 }
 
-export async function fetchQuota(page: Page, customer: Customer): Promise<Quota> {
+export async function fetchQuota({
+  page,
+  nationalityID,
+  encryptedFamilyID,
+  type,
+}: FetchQuotaArgs): Promise<Quota> {
   const responsePromise = page.waitForResponse(
     (response) =>
+      response.request().method() === 'GET' &&
       response.request().url() ===
-      `${QUOTA_ENDPOINT(customer.getNationalityID())}?familyId=${encodeURIComponent(customer.getEncryptedFamilyID())}&customerType=${encodeCustomerType(customer.getSelectedType())}`,
+        `${QUOTA_ENDPOINT(nationalityID)}?familyId=${encryptedFamilyID ? encodeURIComponent(encryptedFamilyID) : ''}&customerType=${encodeCustomerType(type)}`,
   );
 
   const response = await responsePromise;
   const apiResponse = await response.json();
   const quotaResponse = quotaResponseSchema.parse(apiResponse);
-  const quota = Quota.fromResponse(quotaResponse, customer);
+  const quotaDTO = responseToQuotaDTO({ response: quotaResponse, nationalityID, type });
+  const quota = createQuota(quotaDTO);
 
   return quota;
 }
 
-export async function selectCustomerType(page: Page, selectedType: CustomerType) {
-  await page.getByRole('dialog').getByTestId(`radio-${selectedType}`).check();
-  await page.getByRole('dialog').getByRole('button', { name: 'Lanjut Transaksi' }).click();
-
-  if (selectedType === 'Usaha Mikro') {
-    await page.getByRole('button', { name: 'Lewati, Lanjut Transaksi' }).click();
+export async function streamQuotas(quota: Quota) {
+  let quotasJSON;
+  try {
+    quotasJSON = await readFileAsync(QUOTAS_FILE_PATH);
+  } catch {
+    await writeFileAsync(QUOTAS_FILE_PATH, []);
   }
+
+  const quotasDTO = quotasDTOSchema.parse(quotasJSON);
+  const quotas = quotasDTO.map((quotaDTO) => createQuota(quotaDTO));
+
+  await writeFileAsync(QUOTAS_FILE_PATH, getUniqueQuotasDTO([...quotas, quota]));
 }

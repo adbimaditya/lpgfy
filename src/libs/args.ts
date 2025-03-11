@@ -1,29 +1,49 @@
-import type { CustomerType } from '../schemas/customer-response.ts';
+import type { Page } from '@playwright/test';
 
-export interface LoginArgs {
+import type { CustomerDTO, CustomerType } from '../schemas/customer.ts';
+import type { QuotaDTO, QuotaResponse } from '../schemas/quota.ts';
+
+export type CustomerArgs = CustomerDTO;
+export type QuotaArgs = QuotaDTO;
+
+export type LoginArgs = {
+  page: Page;
   phoneNumber: string;
   pin: string;
-}
+};
 
-export interface FetchQuotaArgs {
+export type LogoutArgs = {
+  page: Page;
+};
+
+export type CloseCarouselArgs = {
+  page: Page;
+};
+
+export type ScrapQuotaArgs = {
+  page: Page;
   nationalityID: string;
-  familyID: string;
+};
+
+export type VerifyNationalityIDArgs = {
+  page: Page;
+  nationalityID: string;
+};
+
+export type FetchQuotaArgs = {
+  page: Page;
+  nationalityID: string;
+  encryptedFamilyID?: string;
   type: CustomerType;
-}
+};
 
-export interface ResponseToQuotaDTOArgs {
+export type ResponseToQuotaDTOArgs = {
+  response: QuotaResponse;
   nationalityID: string;
   type: CustomerType;
-}
+};
 
-export interface CustomerArgs {
-  nationalityID: string;
-  encryptedFamilyID: string;
-  types: CustomerType[];
-}
-
-export interface QuotaArgs {
-  nationalityID: string;
-  type: CustomerType;
-  quantity: number;
-}
+export type CreateCustomerArgs = {
+  args: CustomerArgs;
+  selectedType: CustomerType;
+};
