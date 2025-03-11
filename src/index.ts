@@ -1,14 +1,14 @@
 import { chromium } from '@playwright/test';
+import retry from 'async-retry';
 
 import config from './config/index.ts';
-import { LOGIN_URL, VERIFY_NATIONALITY_ID_DELAY } from './libs/constants.ts';
-import { readFileAsync } from './libs/file.ts';
-import { closeCarousel, login, logout, scrapQuota } from './libs/my-pertamina.ts';
-import { nationalityIDsSchema } from './schemas/customer.ts';
+import { LOGIN_URL, MY_LUCKY_NUMBER, VERIFY_NATIONALITY_ID_DELAY } from './libs/constants.ts';
+import { closeCarousel, login, logout, scrapQuotas } from './libs/my-pertamina.ts';
+import { getUnprocessedFlaggedNationalityIDs } from './libs/utils.ts';
 
 const { phoneNumber, pin } = config;
 
-(async () => {
+async function main() {
   const browser = await chromium.launch({
     headless: false,
     args: ['--start-maximized'],
@@ -27,11 +27,9 @@ const { phoneNumber, pin } = config;
   await login({ page, phoneNumber, pin });
   await closeCarousel({ page });
 
-  const nationalityIDsJSON = await readFileAsync('public/data/nationality-ids.json');
-  const nationalityIDs = nationalityIDsSchema.parse(nationalityIDsJSON);
-
-  for (const nationalityID of nationalityIDs) {
-    await scrapQuota({ page, nationalityID });
+  const unprocessedFlaggedNationalityIDs = await getUnprocessedFlaggedNationalityIDs();
+  for (const { nationalityID } of unprocessedFlaggedNationalityIDs) {
+    await scrapQuotas({ page, nationalityID });
     await page.waitForTimeout(VERIFY_NATIONALITY_ID_DELAY);
   }
 
@@ -40,4 +38,6 @@ const { phoneNumber, pin } = config;
   await page.close();
   await context.close();
   await browser.close();
-})();
+}
+
+retry(main, { retries: MY_LUCKY_NUMBER });

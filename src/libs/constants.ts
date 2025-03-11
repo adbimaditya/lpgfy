@@ -9,4 +9,8 @@ export const QUOTA_ENDPOINT = (nationalityID: string) =>
 
 export const VERIFY_NATIONALITY_ID_DELAY = 6_000;
 export const NATIONALITY_ID_LENGTH = 16;
+export const MY_LUCKY_NUMBER = 7;
+
+export const NATIONALITY_IDS_FILE_PATH = 'public/data/nationality-ids.json';
+export const FLAGGED_NATIONALITY_IDS_FILE_PATH = 'public/data/flagged-nationality-ids.json';
 export const QUOTAS_FILE_PATH = 'public/data/quotas.json';

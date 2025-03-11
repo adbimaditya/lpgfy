@@ -7,15 +7,15 @@ import Retailer from '../models/retailer.ts';
 import type { CustomerType } from '../schemas/customer.ts';
 
 import type { CreateCustomerArgs, CustomerArgs, QuotaArgs } from './args.ts';
-import type { ICustomerType } from './interfaces.ts';
+import type { Customer } from './interfaces.ts';
 
-const customerClasses = new Map<CustomerType, new (customerArgs: CustomerArgs) => ICustomerType>([
+const customerClasses = new Map<CustomerType, new (customerArgs: CustomerArgs) => Customer>([
   ['Rumah Tangga', Household],
   ['Pengecer', Retailer],
   ['Usaha Mikro', MicroBusiness],
 ]);
 
-export function createCustomer({ args, selectedType }: CreateCustomerArgs): ICustomerType {
+export function createCustomer({ args, selectedType }: CreateCustomerArgs): Customer {
   const CustomerClass = customerClasses.get(selectedType);
   if (!CustomerClass) {
     throw new Error(`Unknown customer type ${selectedType}`);

@@ -20,7 +20,7 @@ export type CloseCarouselArgs = {
   page: Page;
 };
 
-export type ScrapQuotaArgs = {
+export type ScrapQuotasArgs = {
   page: Page;
   nationalityID: string;
 };

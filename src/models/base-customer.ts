@@ -1,7 +1,7 @@
 import type { CustomerArgs } from '../libs/args.ts';
 import type { CustomerDTO, CustomerFlags, CustomerType } from '../schemas/customer.ts';
 
-export default class Customer {
+export default class BaseCustomer {
   private nationalityID: string;
   private encryptedFamilyID?: string;
   private types: CustomerType[];

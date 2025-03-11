@@ -6,6 +6,12 @@ import { createResponseSchema } from './response.ts';
 
 export const nationalityIDSchema = z.string().length(NATIONALITY_ID_LENGTH);
 export const nationalityIDsSchema = z.array(nationalityIDSchema);
+export const flaggedNationalityIDSchema = z.object({
+  nationalityID: nationalityIDSchema,
+  flag: z.boolean(),
+});
+export const flaggedNationalityIDsSchema = z.array(flaggedNationalityIDSchema);
+
 export const familyIDSchema = z.string().length(NATIONALITY_ID_LENGTH).optional();
 export const customerTypeNameSchema = z.enum(['Rumah Tangga', 'Usaha Mikro', 'Pengecer']);
 export const customerFlagsSchema = z.object({
@@ -51,6 +57,7 @@ export const baseCustomerDataSchema = z.object({
 export const customerDataSchema = baseCustomerDataSchema.merge(customerFlagsSchema);
 export const customerResponseSchema = createResponseSchema(customerDataSchema);
 
+export type FlaggedNationalityID = z.infer<typeof flaggedNationalityIDSchema>;
 export type CustomerType = z.infer<typeof customerTypeNameSchema>;
 export type CustomerFlags = z.infer<typeof customerFlagsSchema>;
 export type CustomerDTO = z.infer<typeof customerDTOSchema>;

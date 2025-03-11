@@ -1,23 +1,24 @@
 import status from 'http-status';
 
+import FlaggedNationalityIDsFile from '../models/flagged-nationality-ids-file.ts';
 import Quota from '../models/quota.ts';
+import QuotasFile from '../models/quotas-file.ts';
 import { customerResponseSchema } from '../schemas/customer.ts';
-import { quotaResponseSchema, quotasDTOSchema } from '../schemas/quota.ts';
+import { quotaResponseSchema } from '../schemas/quota.ts';
 
 import type {
   CloseCarouselArgs,
   FetchQuotaArgs,
   LoginArgs,
   LogoutArgs,
-  ScrapQuotaArgs,
+  ScrapQuotasArgs,
   VerifyNationalityIDArgs,
 } from './args.ts';
-import { QUOTA_ENDPOINT, QUOTAS_FILE_PATH, VERIFY_NATIONALITY_ID_ENDPOINT } from './constants.ts';
+import { QUOTA_ENDPOINT, VERIFY_NATIONALITY_ID_ENDPOINT } from './constants.ts';
 import { responseToCustomerDTO, responseToQuotaDTO } from './dto.ts';
 import { createCustomer, createQuota } from './factory.ts';
-import { readFileAsync, writeFileAsync } from './file.ts';
-import type { ICustomerType } from './interfaces.ts';
-import { encodeCustomerType, getUniqueQuotasDTO } from './utils.ts';
+import type { Customer } from './interfaces.ts';
+import { encodeCustomerType } from './utils.ts';
 
 export async function login({ page, phoneNumber, pin }: LoginArgs) {
   await page.getByPlaceholder('Email atau No. Handphone').fill(phoneNumber);
@@ -34,14 +35,18 @@ export async function closeCarousel({ page }: CloseCarouselArgs) {
   await page.getByTestId(/btnClose*/).click();
 }
 
-export async function scrapQuota({ page, nationalityID }: ScrapQuotaArgs) {
+export async function scrapQuotas({ page, nationalityID }: ScrapQuotasArgs) {
   const customer = await verifyNationalityID({ page, nationalityID });
   if (!customer) {
+    await FlaggedNationalityIDsFile.update(nationalityID);
+
     return;
   }
 
   const quota = await customer.getQuota(page);
   if (!quota) {
+    await FlaggedNationalityIDsFile.update(nationalityID);
+
     return;
   }
 
@@ -52,7 +57,7 @@ export async function scrapQuota({ page, nationalityID }: ScrapQuotaArgs) {
 export async function verifyNationalityID({
   page,
   nationalityID,
-}: VerifyNationalityIDArgs): Promise<ICustomerType | null> {
+}: VerifyNationalityIDArgs): Promise<Customer | null> {
   const responsePromise = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
@@ -111,15 +116,6 @@ export async function fetchQuota({
 }
 
 export async function streamQuotas(quota: Quota) {
-  let quotasJSON;
-  try {
-    quotasJSON = await readFileAsync(QUOTAS_FILE_PATH);
-  } catch {
-    await writeFileAsync(QUOTAS_FILE_PATH, []);
-  }
-
-  const quotasDTO = quotasDTOSchema.parse(quotasJSON);
-  const quotas = quotasDTO.map((quotaDTO) => createQuota(quotaDTO));
-
-  await writeFileAsync(QUOTAS_FILE_PATH, getUniqueQuotasDTO([...quotas, quota]));
+  await QuotasFile.update(quota);
+  await FlaggedNationalityIDsFile.update(quota.getNationalityID());
 }

@@ -1,13 +1,13 @@
 import type { Page } from '@playwright/test';
 
-import type { ICustomerType } from '../libs/interfaces.ts';
+import type { Customer } from '../libs/interfaces.ts';
 import { fetchQuota } from '../libs/my-pertamina.ts';
 import type { CustomerType } from '../schemas/customer.ts';
 
-import Customer from './customer.ts';
+import BaseCustomer from './base-customer.ts';
 import Quota from './quota.ts';
 
-export default class MicroBusiness extends Customer implements ICustomerType {
+export default class MicroBusiness extends BaseCustomer implements Customer {
   private name: CustomerType = 'Usaha Mikro';
 
   public async getQuota(page: Page): Promise<Quota | null> {

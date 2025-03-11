@@ -1,12 +1,12 @@
 import type { Page } from '@playwright/test';
 
-import type { ICustomerType } from '../libs/interfaces.ts';
+import type { Customer } from '../libs/interfaces.ts';
 import { fetchQuota } from '../libs/my-pertamina.ts';
 import type { CustomerType } from '../schemas/customer.ts';
 
-import Customer from './customer.ts';
+import BaseCustomer from './base-customer.ts';
 
-export default class Household extends Customer implements ICustomerType {
+export default class Household extends BaseCustomer implements Customer {
   private name: CustomerType = 'Rumah Tangga';
 
   async getQuota(page: Page) {
