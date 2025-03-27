@@ -2,8 +2,8 @@
   "name": "lpgfy",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.23.0",
+    "@playwright/test": "^1.51.1",
     "@types/node": "^22.13.13",
     "@typescript-eslint/eslint-plugin": "^8.26.0",
     "@typescript-eslint/parser": "^8.26.0",
@@ -36,5 +37,9 @@
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "zod": "^3.24.2"
   }
 }

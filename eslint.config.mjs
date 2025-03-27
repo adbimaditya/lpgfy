@@ -14,8 +14,10 @@ const compat = new FlatCompat({
 });
 
 export default [
+  ...compat.extends('airbnb-base'),
+  ...compat.extends('prettier'),
   {
-    ignores: ['node_modules', 'dist', 'eslint.config.mjs'],
+    ignores: ['node_modules', 'dist', 'tests', 'eslint.config.mjs', 'playwright.config.ts'],
   },
   {
     files: ['**/*.{js,mjs,cjs,ts}'],
@@ -35,6 +37,9 @@ export default [
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
       'prettier/prettier': 'error',
+      'lines-between-class-members': 'off',
+      'import/no-extraneous-dependencies': 'off',
+      'import/extensions': 'off',
     },
     settings: {
       'import/resolver': {
@@ -44,6 +49,4 @@ export default [
       },
     },
   },
-  ...compat.extends('airbnb-base'),
-  ...compat.extends('prettier'),
 ];
