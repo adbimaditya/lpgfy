@@ -1,8 +1,12 @@
 import { chromium } from '@playwright/test';
+import retry from 'async-retry';
+import path from 'path';
 
 import authConfig from './configs/auth.ts';
+import { MY_LUCKY_NUMBER } from './libs/constants.ts';
+import { writeFileAsync } from './libs/utils.ts';
 import LoginPage from './pages/login-page.ts';
-import VerificationPage from './pages/verification-page.ts';
+import NationalityIdVerificationPage from './pages/nationality-id-verification-page.ts';
 
 async function main() {
   const browser = await chromium.launch({
@@ -25,19 +29,34 @@ async function main() {
   await loginPage.saveAuth();
   await loginPage.closeCarousel();
 
-  const verificationPage = new VerificationPage(page);
+  const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  await verificationPage.fillNationalityIdVerificationInput('');
-  await verificationPage.submitNationalityIdVerificationForm();
+  const nationalityId = '';
 
-  await page.waitForTimeout(3000);
+  const customerRecord = await nationalityIdVerificationPage.getCustomerRecord(nationalityId);
 
-  await verificationPage.goto();
-  await verificationPage.logout();
+  if (customerRecord) {
+    const { familyIdEncrypted, customerTypes } = customerRecord;
+    const [customerType] = customerTypes;
+
+    const quotaRecord = await nationalityIdVerificationPage.getQuotaRecord({
+      nationalityId,
+      encryptedFamilyId: familyIdEncrypted,
+      customerType: customerType.name,
+    });
+
+    await writeFileAsync(path.resolve('public', 'data', `${nationalityId}.json`), {
+      customerRecord,
+      quotaRecord,
+    });
+  }
+
+  await nationalityIdVerificationPage.goto();
+  await nationalityIdVerificationPage.logout();
 
   await page.close();
   await context.close();
   await browser.close();
 }
 
-main();
+retry(main, { retries: MY_LUCKY_NUMBER });
