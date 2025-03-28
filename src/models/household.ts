@@ -17,7 +17,11 @@ export default class Household extends Customer implements CustomerScraper {
   }
 
   public async scrapQuotaRecord() {
-    await this.handleBureaucracy();
+    const isPass = await this.handleBureaucracy();
+
+    if (!isPass) {
+      return null;
+    }
 
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
@@ -33,5 +37,7 @@ export default class Household extends Customer implements CustomerScraper {
       await this.page.getByRole('dialog').getByTestId(`radio-${this.name}`).check();
       await this.page.getByRole('dialog').getByRole('button', { name: 'Lanjut Transaksi' }).click();
     }
+
+    return true;
   }
 }

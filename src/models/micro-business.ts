@@ -17,7 +17,11 @@ export default class MicroBusiness extends Customer implements CustomerScraper {
   }
 
   public async scrapQuotaRecord() {
-    await this.handleBureaucracy();
+    const isPass = await this.handleBureaucracy();
+
+    if (!isPass) {
+      return null;
+    }
 
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
@@ -34,14 +38,17 @@ export default class MicroBusiness extends Customer implements CustomerScraper {
       await this.page.getByRole('dialog').getByRole('button', { name: 'Lanjut Transaksi' }).click();
     }
 
-    if (!this.isEligible()) {
+    if (!this.isEligible() && !this.hasRecommendationLetter()) {
       await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
-      return;
+
+      return false;
     }
 
-    if (!this.hasRecommendationLetter()) {
+    if (this.isEligible() && !this.hasRecommendationLetter()) {
       await this.page.getByRole('button', { name: 'Lewati, Lanjut Transaksi' }).click();
     }
+
+    return true;
   }
 
   private isEligible(): boolean {

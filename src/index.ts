@@ -2,15 +2,17 @@
 
 import { chromium } from '@playwright/test';
 import retry from 'async-retry';
-import path from 'path';
 
 import authConfig from './configs/auth.ts';
 import { MY_LUCKY_NUMBER, NATIONALITY_ID_VERIFICATION_DELAY } from './libs/constants.ts';
-import { readFileAsync, writeFileAsync } from './libs/utils.ts';
+import {
+  ensureFlaggedNationalityIdsFileExists,
+  updateFlaggedNationalityIdsFile,
+  updateQuotasFile,
+} from './libs/utils.ts';
 import LoginPage from './pages/login-page.ts';
 import NationalityIdVerificationPage from './pages/nationality-id-verification-page.ts';
 import SalePage from './pages/sale-page.ts';
-import { nationalityIdsSchema } from './schemas/file.ts';
 
 async function main() {
   const browser = await chromium.launch({
@@ -35,13 +37,15 @@ async function main() {
 
   const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  const nationalityIdsFile = await readFileAsync(
-    path.resolve('public', 'data', 'nationality-ids.json'),
-  );
+  const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists();
 
-  const nationalityIds = nationalityIdsSchema.parse(nationalityIdsFile);
+  for (const { nationalityId, flag } of flaggedNationalityIds) {
+    if (flag) {
+      continue;
+    }
 
-  for (const nationalityId of nationalityIds) {
+    await updateFlaggedNationalityIdsFile(nationalityId);
+
     const customer = await nationalityIdVerificationPage.getCustomer(nationalityId);
 
     if (!customer) {
@@ -56,10 +60,7 @@ async function main() {
       continue;
     }
 
-    await writeFileAsync(path.resolve('public', 'data', `${nationalityId}.json`), {
-      nationalityId,
-      quotaRecord,
-    });
+    await updateQuotasFile({ nationalityId, ...quotaRecord });
 
     const salePage = new SalePage(page);
 
