@@ -41,6 +41,8 @@ export default [
       'import/no-extraneous-dependencies': 'off',
       'import/extensions': 'off',
       'no-use-before-define': 'off',
+      'no-await-in-loop': 'off',
+      'no-restricted-syntax': 'off',
     },
     settings: {
       'import/resolver': {

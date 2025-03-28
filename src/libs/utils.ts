@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { CustomerType } from '../schemas/customer-record.ts';
+import type { CustomerType } from './types.ts';
 
 export async function readFileAsync(filePath: string) {
   const data = await fs.promises.readFile(filePath, 'utf-8');

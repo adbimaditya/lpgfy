@@ -1,12 +1,16 @@
+/* eslint-disable no-continue */
+
 import { chromium } from '@playwright/test';
 import retry from 'async-retry';
 import path from 'path';
 
 import authConfig from './configs/auth.ts';
-import { MY_LUCKY_NUMBER } from './libs/constants.ts';
-import { writeFileAsync } from './libs/utils.ts';
+import { MY_LUCKY_NUMBER, NATIONALITY_ID_VERIFICATION_DELAY } from './libs/constants.ts';
+import { readFileAsync, writeFileAsync } from './libs/utils.ts';
 import LoginPage from './pages/login-page.ts';
 import NationalityIdVerificationPage from './pages/nationality-id-verification-page.ts';
+import SalePage from './pages/sale-page.ts';
+import { nationalityIdsSchema } from './schemas/file.ts';
 
 async function main() {
   const browser = await chromium.launch({
@@ -31,24 +35,36 @@ async function main() {
 
   const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  const nationalityId = '';
+  const nationalityIdsFile = await readFileAsync(
+    path.resolve('public', 'data', 'nationality-ids.json'),
+  );
 
-  const customerRecord = await nationalityIdVerificationPage.getCustomerRecord(nationalityId);
+  const nationalityIds = nationalityIdsSchema.parse(nationalityIdsFile);
 
-  if (customerRecord) {
-    const { familyIdEncrypted, customerTypes } = customerRecord;
-    const [customerType] = customerTypes;
+  for (const nationalityId of nationalityIds) {
+    const customer = await nationalityIdVerificationPage.getCustomer(nationalityId);
 
-    const quotaRecord = await nationalityIdVerificationPage.getQuotaRecord({
-      nationalityId,
-      encryptedFamilyId: familyIdEncrypted,
-      customerType: customerType.name,
-    });
+    if (!customer) {
+      await page.waitForTimeout(NATIONALITY_ID_VERIFICATION_DELAY);
+      continue;
+    }
+
+    const quotaRecord = await customer.scrapQuotaRecord();
+
+    if (!quotaRecord) {
+      await page.waitForTimeout(NATIONALITY_ID_VERIFICATION_DELAY);
+      continue;
+    }
 
     await writeFileAsync(path.resolve('public', 'data', `${nationalityId}.json`), {
-      customerRecord,
+      nationalityId,
       quotaRecord,
     });
+
+    const salePage = new SalePage(page);
+
+    await salePage.changeCustomer();
+    await page.waitForTimeout(NATIONALITY_ID_VERIFICATION_DELAY);
   }
 
   await nationalityIdVerificationPage.goto();

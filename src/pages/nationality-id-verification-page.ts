@@ -7,6 +7,7 @@ import {
   NATIONALITY_ID_VERIFICATION_URL,
   QUOTA_ENDPOINT,
 } from '../libs/constants.ts';
+import { customerResponseToCustomerScraper } from '../libs/dto.ts';
 import { encodeCustomerType } from '../libs/utils.ts';
 import { customerResponseSchema } from '../schemas/customer-record.ts';
 import { quotaResponseSchema } from '../schemas/quota-record.ts';
@@ -23,7 +24,7 @@ export default class NationalityIdVerificationPage {
     await this.page.goto(this.url, options);
   }
 
-  public async getCustomerRecord(nationalityId: string) {
+  public async getCustomer(nationalityId: string) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
@@ -47,9 +48,13 @@ export default class NationalityIdVerificationPage {
     }
 
     const apiResponse = await response.json();
-    const { data: customerRecord } = customerResponseSchema.parse(apiResponse);
+    const customerResponse = customerResponseSchema.parse(apiResponse);
+    const customer = customerResponseToCustomerScraper({
+      page: this.page,
+      response: { ...customerResponse, data: { ...customerResponse.data, nationalityId } },
+    });
 
-    return customerRecord;
+    return customer;
   }
 
   public async getQuotaRecord({ nationalityId, encryptedFamilyId, customerType }: GetQuotaRecord) {
