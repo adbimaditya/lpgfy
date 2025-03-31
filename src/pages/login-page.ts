@@ -1,7 +1,6 @@
 import type { Page } from '@playwright/test';
-import path from 'path';
 
-import { LOGIN_URL } from '../libs/constants.ts';
+import { AUTH_FILE_PATH, LOGIN_URL } from '../libs/constants.ts';
 
 export default class LoginPage {
   private readonly url: string = LOGIN_URL;
@@ -28,7 +27,7 @@ export default class LoginPage {
   }
 
   public async saveAuth() {
-    await this.page.context().storageState({ path: path.resolve('public', 'data', 'auth.json') });
+    await this.page.context().storageState({ path: AUTH_FILE_PATH });
   }
 
   public async closeCarousel() {

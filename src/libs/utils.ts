@@ -12,17 +12,30 @@ import {
   NATIONALITY_IDS_FILE_PATH,
   QUOTAS_FILE_PATH,
 } from './constants.ts';
-import type { CustomerType } from './types.ts';
+import type { CustomerType, Result } from './types.ts';
+
+export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
+  try {
+    const data = await promise;
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as E };
+  }
+}
+
+export function isEmpty(data: unknown[]) {
+  return data.length === 0;
+}
+
+export function encodeCustomerType(customerType: CustomerType) {
+  return customerType.replace(' ', '+');
+}
 
 export async function readFileAsync(filePath: string) {
   const data = await fs.promises.readFile(filePath, 'utf-8');
 
   return JSON.parse(data);
-}
-
-export async function writeFileAsync(filePath: string, data: unknown) {
-  await ensureDirectoryExists(filePath);
-  await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function ensureDirectoryExists(filePath: string) {
@@ -33,8 +46,13 @@ export async function ensureDirectoryExists(filePath: string) {
   }
 }
 
-export function encodeCustomerType(type: CustomerType) {
-  return type.replace(' ', '+');
+export async function writeFileAsync(filePath: string, data: unknown) {
+  await ensureDirectoryExists(filePath);
+  await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+export async function deleteFileAsync(filePath: string) {
+  await fs.promises.unlink(filePath);
 }
 
 export async function ensureFlaggedNationalityIdsFileExists() {
@@ -73,13 +91,6 @@ export async function updateFlaggedNationalityIdsFile(nationalityId: string) {
   );
 }
 
-export async function updateQuotasFile(quota: Quota) {
-  const filePath = QUOTAS_FILE_PATH;
-  const quotas = await ensureQuotasFileExists();
-
-  await writeFileAsync(filePath, [...quotas, quota]);
-}
-
 export async function ensureQuotasFileExists() {
   const filePath = QUOTAS_FILE_PATH;
   const { data: quotasFile, error } = await tryCatch(readFileAsync(filePath));
@@ -97,24 +108,9 @@ export async function ensureQuotasFileExists() {
   return quotas;
 }
 
-type Success<T> = {
-  data: T;
-  error: null;
-};
+export async function updateQuotasFile(quota: Quota) {
+  const filePath = QUOTAS_FILE_PATH;
+  const quotas = await ensureQuotasFileExists();
 
-type Failure<E> = {
-  data: null;
-  error: E;
-};
-
-type Result<T, E = Error> = Success<T> | Failure<E>;
-
-export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
-  try {
-    const data = await promise;
-
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error: error as E };
-  }
+  await writeFileAsync(filePath, [...quotas, quota]);
 }

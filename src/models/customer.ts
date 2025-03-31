@@ -7,11 +7,11 @@ export default class Customer {
   private readonly types: CustomerType[];
   private readonly flags: CustomerFlags;
 
-  constructor({ nationalityId, encryptedFamilyId, types, flags }: CustomerArgs) {
+  constructor({ nationalityId, encryptedFamilyId, customerTypes, customerFlags }: CustomerArgs) {
     this.nationalityId = nationalityId;
     this.encryptedFamilyId = encryptedFamilyId;
-    this.types = types;
-    this.flags = flags;
+    this.types = customerTypes;
+    this.flags = customerFlags;
   }
 
   public getNationalityId() {
@@ -20,6 +20,10 @@ export default class Customer {
 
   public getEncryptedFamilyId() {
     return this.encryptedFamilyId;
+  }
+
+  public getTypes() {
+    return this.types;
   }
 
   public getFlags() {

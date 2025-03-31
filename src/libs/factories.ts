@@ -18,11 +18,15 @@ export const customerClasses = new Map<
   ['Usaha Mikro', MicroBusiness],
 ]);
 
-export function createCustomer({ page, args, selectedType }: CreateCustomerArgs): CustomerScraper {
-  const CustomerClass = customerClasses.get(selectedType);
+export function createCustomer({
+  page,
+  customerArgs,
+  selectedCustomerType,
+}: CreateCustomerArgs): CustomerScraper {
+  const CustomerClass = customerClasses.get(selectedCustomerType);
   if (!CustomerClass) {
-    throw new Error(`Unknown customer type ${selectedType}`);
+    throw new Error(`Unknown customer type ${selectedCustomerType}`);
   }
 
-  return new CustomerClass(page, args);
+  return new CustomerClass(page, customerArgs);
 }

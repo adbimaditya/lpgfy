@@ -1,5 +1,5 @@
-import { QuotaRecord } from '../schemas/quota-record.ts';
+import { QuotaAllocation } from '../schemas/file.ts';
 
 export interface CustomerScraper {
-  scrapQuotaRecord(): Promise<QuotaRecord | null>;
+  scrapQuotaAllocation(): Promise<QuotaAllocation | null>;
 }

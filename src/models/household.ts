@@ -16,7 +16,18 @@ export default class Household extends Customer implements CustomerScraper {
     this.page = page;
   }
 
-  public async scrapQuotaRecord() {
+  private async handleBureaucracy() {
+    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
+
+    if (this.hasMultipleTypes()) {
+      await nationalityIdVerificationPage.selectCustomerType(this.name);
+      await nationalityIdVerificationPage.continueTransaction();
+    }
+
+    return true;
+  }
+
+  public async scrapQuotaAllocation() {
     const isPass = await this.handleBureaucracy();
 
     if (!isPass) {
@@ -25,19 +36,10 @@ export default class Household extends Customer implements CustomerScraper {
 
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
-    return nationalityIdVerificationPage.getQuotaRecord({
+    return nationalityIdVerificationPage.getQuotaAllocation({
       nationalityId: this.getNationalityId(),
       encryptedFamilyId: this.getEncryptedFamilyId(),
-      customerType: this.name,
+      selectedCustomerType: this.name,
     });
-  }
-
-  private async handleBureaucracy() {
-    if (this.hasMultipleTypes()) {
-      await this.page.getByRole('dialog').getByTestId(`radio-${this.name}`).check();
-      await this.page.getByRole('dialog').getByRole('button', { name: 'Lanjut Transaksi' }).click();
-    }
-
-    return true;
   }
 }

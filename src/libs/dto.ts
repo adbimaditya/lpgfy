@@ -1,19 +1,20 @@
-/* eslint-disable import/prefer-default-export */
-
-import type { CustomerArgs, CustomerResponseToCustomerScraperArgs } from './args.ts';
-import { createCustomer } from './factories.ts';
-import type { CustomerScraper } from './interfaces.ts';
+import Customer from '../models/customer.ts';
+import type { QuotaAllocation } from '../schemas/file.ts';
+import type {
+  CustomerArgs,
+  CustomerResponseToCustomerArgs,
+  QuotaRecordToQuotaAllocationArgs,
+} from './args.ts';
 import type { CustomerType } from './types.ts';
 
-export function customerResponseToCustomerScraper({
-  page,
-  response: { data },
-}: CustomerResponseToCustomerScraperArgs): CustomerScraper {
+export function customerResponseToCustomer({
+  customerResponse: { data },
+}: CustomerResponseToCustomerArgs): Customer {
   const args: CustomerArgs = {
     nationalityId: data.nationalityId,
     encryptedFamilyId: data.familyIdEncrypted,
-    types: data.customerTypes.map((customerType) => customerType.name as CustomerType),
-    flags: {
+    customerTypes: data.customerTypes.map((customerType) => customerType.name as CustomerType),
+    customerFlags: {
       isAgreedTermsConditions: data.isAgreedTermsConditions,
       isCompleted: data.isCompleted,
       isSubsidy: data.isSubsidi,
@@ -24,9 +25,17 @@ export function customerResponseToCustomerScraper({
     },
   };
 
-  const [firstType] = args.types;
-
-  const customer = createCustomer({ page, args, selectedType: firstType });
+  const customer = new Customer(args);
 
   return customer;
+}
+
+export function quotaRecordToQuotaAllocation({
+  customerType,
+  quotaRecord,
+}: QuotaRecordToQuotaAllocationArgs): QuotaAllocation {
+  return {
+    type: customerType,
+    quantity: quotaRecord.quotaRemaining.daily,
+  };
 }
