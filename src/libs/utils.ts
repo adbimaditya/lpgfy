@@ -8,11 +8,7 @@ import {
   quotasSchema,
 } from '../schemas/file.ts';
 import type { CloseBrowserOnErrorArgs } from './args.ts';
-import {
-  FLAGGED_NATIONALITY_IDS_FILE_PATH,
-  NATIONALITY_IDS_FILE_PATH,
-  QUOTAS_FILE_PATH,
-} from './constants.ts';
+import { FLAGGED_NATIONALITY_IDS_FILE_PATH, QUOTAS_FILE_PATH } from './constants.ts';
 import type { CustomerType, Result } from './types.ts';
 
 export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
@@ -60,13 +56,22 @@ export async function deleteFileAsync(filePath: string) {
   await fs.promises.unlink(filePath);
 }
 
-export async function ensureFlaggedNationalityIdsFileExists() {
+export async function ensureFlaggedNationalityIdsFileExists(nationalityIdsFilePath: string) {
   const filePath = FLAGGED_NATIONALITY_IDS_FILE_PATH;
-  const { data: flaggedNationalityIdsFile, error } = await tryCatch(readFileAsync(filePath));
+  const { data: flaggedNationalityIdsFile, error: readError } = await tryCatch(
+    readFileAsync(filePath),
+  );
 
-  if (error) {
-    const nationalityIdsFile = await readFileAsync(NATIONALITY_IDS_FILE_PATH);
-    const nationalityIds = nationalityIdsSchema.parse(nationalityIdsFile);
+  if (readError) {
+    const nationalityIdsFile = await readFileAsync(nationalityIdsFilePath);
+    const { data: nationalityIds, error: parseError } = await tryCatch(
+      nationalityIdsSchema.parseAsync(nationalityIdsFile),
+    );
+
+    if (parseError) {
+      return null;
+    }
+
     const flaggedNationalityIds = nationalityIds.map((nationalityId) => ({
       nationalityId,
       flag: false,
@@ -129,8 +134,6 @@ export async function closeBrowserOnError({
   const { error } = await tryCatch(callback());
 
   if (error) {
-    console.log({ error, message: error.message });
-
     await page.close();
     await context.close();
     await browser.close();

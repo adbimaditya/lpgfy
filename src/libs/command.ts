@@ -1,33 +1,44 @@
 import { input, password } from '@inquirer/prompts';
-
 import ora from 'ora';
-import { login, logout, scrapQuotas } from './my-pertamina.ts';
+import path from 'path';
+
+import { identifierSchema, pinSchema } from '../schemas/auth.ts';
+import { getIsAuthenticated, login, logout, scrapQuotas } from './my-pertamina.ts';
+import type { ScrapQuotasActionArgs } from './types.ts';
+import { ensureFlaggedNationalityIdsFileExists } from './utils.ts';
 
 export async function loginAction() {
+  const isAuthenticated = await getIsAuthenticated();
+
+  if (isAuthenticated) {
+    ora().info('You are already logged in.');
+    return;
+  }
+
   const identifier = await input({
     message: 'Please enter your email address or phone number:',
     required: true,
     validate: (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const phoneNumberRegex = /^\d{10,13}$/;
+      const { success } = identifierSchema.safeParse(value);
 
-      if (emailRegex.test(value) || phoneNumberRegex.test(value)) {
-        return true;
+      if (!success) {
+        return 'Invalid identifier. Please enter a valid email address or a phone number with 10 to 13 digits.';
       }
 
-      return 'Invalid identifier. Please enter a valid email address or a phone number with 10 to 13 digits.';
+      return true;
     },
   });
+
   const pin = await password({
     message: 'Enter your 6-digit PIN:',
     validate: (value) => {
-      const pinRegex = /^\d{6}$/;
+      const { success } = pinSchema.safeParse(value);
 
-      if (pinRegex.test(value)) {
-        return true;
+      if (!success) {
+        return 'Invalid PIN. Please enter exactly 6 digits.';
       }
 
-      return 'Invalid PIN. Please enter exactly 6 digits.';
+      return true;
     },
   });
 
@@ -35,21 +46,47 @@ export async function loginAction() {
 
   spinner.start();
   await login({ identifier, pin });
-  spinner.succeed('User logged in successfully.');
+  spinner.succeed('You have successfully logged in.');
 }
 
 export async function logoutAction() {
+  const isAuthenticated = await getIsAuthenticated();
+
+  if (!isAuthenticated) {
+    ora().info('You are not logged in.');
+    return;
+  }
+
   const spinner = ora('Logging out...');
 
   spinner.start();
   await logout();
-  spinner.succeed('User logged out successfully.');
+  spinner.succeed('You have successfully logged out.');
 }
 
-export async function scrapQuotasAction() {
+export async function scrapQuotasAction({ file }: ScrapQuotasActionArgs) {
+  const isAuthenticated = await getIsAuthenticated();
+
+  if (!isAuthenticated) {
+    ora().info(
+      'You must be logged in to perform this task. Please use the login command to authenticate.',
+    );
+    return;
+  }
+
+  const filePath = path.resolve(file);
+  const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists(filePath);
+
+  if (!flaggedNationalityIds) {
+    ora().fail(
+      `The file at ${filePath} is either missing or contains data in an unexpected format. Please ensure the file exists and adheres to the required structure.`,
+    );
+    return;
+  }
+
   const spinner = ora('Scraping quotas...');
 
   spinner.start();
-  await scrapQuotas();
+  await scrapQuotas(flaggedNationalityIds);
   spinner.succeed('Quota scraping completed successfully.');
 }

@@ -3,6 +3,7 @@ import { chromium } from '@playwright/test';
 import LoginPage from '../pages/login-page.ts';
 import NationalityIdVerificationPage from '../pages/nationality-id-verification-page.ts';
 import SalePage from '../pages/sale-page.ts';
+import type { FlaggedNationalityId } from '../schemas/file.ts';
 import type {
   LoginArgs,
   ScrapQuotaAllocationArgs,
@@ -14,7 +15,6 @@ import { createCustomer } from './factories.ts';
 import {
   closeBrowserOnError,
   deleteFileAsync,
-  ensureFlaggedNationalityIdsFileExists,
   isEmpty,
   isFirstIteration,
   readFileAsync,
@@ -85,11 +85,6 @@ export async function login({ identifier, pin }: LoginArgs) {
 }
 
 export async function logout() {
-  const isAuthenticated = await getIsAuthenticated();
-  if (!isAuthenticated) {
-    return;
-  }
-
   const filePath = AUTH_FILE_PATH;
 
   const browser = await chromium.launch({
@@ -208,13 +203,7 @@ export async function scrapQuota({
   });
 }
 
-export async function scrapQuotas() {
-  const isAuthenticated = await getIsAuthenticated();
-
-  if (!isAuthenticated) {
-    return;
-  }
-
+export async function scrapQuotas(flaggedNationalityIds: FlaggedNationalityId[]) {
   const browser = await chromium.launch({
     headless: false,
     args: ['--start-maximized'],
@@ -233,8 +222,6 @@ export async function scrapQuotas() {
       const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
       await nationalityIdVerificationPage.goto();
-
-      const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists();
 
       for (const flaggedNationalityId of flaggedNationalityIds) {
         await scrapQuota({ page, flaggedNationalityId });

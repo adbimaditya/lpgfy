@@ -24,6 +24,7 @@ async function main() {
     .action(logoutAction);
   program
     .command('scrap-quotas')
+    .requiredOption('-f, --file <path>', 'Path to the file to process')
     .description('Scrap LPG quota information.')
     .action(scrapQuotasAction);
 

@@ -17,7 +17,6 @@ export const CUSTOMER_TYPES = ['Rumah Tangga', 'Usaha Mikro', 'Pengecer'] as con
 export const CHANNEL_INJECTS = ['tnp2k', 'maplite', 'bpum'] as const;
 
 export const AUTH_FILE_PATH = path.resolve('public', 'data', 'auth.json');
-export const NATIONALITY_IDS_FILE_PATH = path.resolve('public', 'data', 'nationality-ids.json');
 export const FLAGGED_NATIONALITY_IDS_FILE_PATH = path.resolve(
   'public',
   'data',
