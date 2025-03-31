@@ -1,10 +1,15 @@
-import type { Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import Customer from '../models/customer.ts';
 import type { CustomerResponse } from '../schemas/customer-record.ts';
 import type { FlaggedNationalityId } from '../schemas/file.ts';
 import type { QuotaRecord } from '../schemas/quota-record.ts';
 import type { CustomerFlags, CustomerType } from './types.ts';
+
+export type LoginArgs = {
+  identifier: string;
+  pin: string;
+};
 
 export type GetQuotaAllocationArgs = {
   nationalityId: string;
@@ -42,11 +47,17 @@ export type ScrapQuotaAllocationArgs = {
 
 export type ScrapQuotaAllocationsArgs = {
   page: Page;
-  nationalityId: string;
-  customerTypes: CustomerType[];
+  customer: Customer;
 };
 
 export type ScrapQuotaArgs = {
   page: Page;
   flaggedNationalityId: FlaggedNationalityId;
+};
+
+export type CloseBrowserOnErrorArgs = {
+  page: Page;
+  context: BrowserContext;
+  browser: Browser;
+  callback: () => Promise<void>;
 };

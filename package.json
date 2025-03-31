@@ -14,13 +14,13 @@
     "url": "git+https://github.com/adbimaditya/lpgfy.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Muhammad Adjie Bimaditya",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/adbimaditya/lpgfy/issues"
   },
   "homepage": "https://github.com/adbimaditya/lpgfy#readme",
-  "description": "",
+  "description": "Command-line tool for automating tasks within the Subsidi Tepat LPG section of the My Pertamina website.",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.23.0",
@@ -40,9 +40,11 @@
     "typescript-eslint": "^8.28.0"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.4.0",
     "async-retry": "^1.3.3",
-    "dotenv": "^16.4.7",
+    "commander": "^13.1.0",
     "http-status": "^2.1.0",
+    "ora": "^8.2.0",
     "zod": "^3.24.2"
   }
 }

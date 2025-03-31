@@ -7,6 +7,7 @@ import {
   type Quota,
   quotasSchema,
 } from '../schemas/file.ts';
+import type { CloseBrowserOnErrorArgs } from './args.ts';
 import {
   FLAGGED_NATIONALITY_IDS_FILE_PATH,
   NATIONALITY_IDS_FILE_PATH,
@@ -26,6 +27,10 @@ export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Resul
 
 export function isEmpty(data: unknown[]) {
   return data.length === 0;
+}
+
+export function isFirstIteration(index: number) {
+  return index === 0;
 }
 
 export function encodeCustomerType(customerType: CustomerType) {
@@ -113,4 +118,21 @@ export async function updateQuotasFile(quota: Quota) {
   const quotas = await ensureQuotasFileExists();
 
   await writeFileAsync(filePath, [...quotas, quota]);
+}
+
+export async function closeBrowserOnError({
+  page,
+  context,
+  browser,
+  callback,
+}: CloseBrowserOnErrorArgs) {
+  const { error } = await tryCatch(callback());
+
+  if (error) {
+    console.log({ error, message: error.message });
+
+    await page.close();
+    await context.close();
+    await browser.close();
+  }
 }

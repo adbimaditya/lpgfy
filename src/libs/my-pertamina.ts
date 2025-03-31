@@ -1,11 +1,10 @@
 import { chromium } from '@playwright/test';
 
-import authConfig from '../configs/auth.ts';
-import Customer from '../models/customer.ts';
 import LoginPage from '../pages/login-page.ts';
 import NationalityIdVerificationPage from '../pages/nationality-id-verification-page.ts';
 import SalePage from '../pages/sale-page.ts';
 import type {
+  LoginArgs,
   ScrapQuotaAllocationArgs,
   ScrapQuotaAllocationsArgs,
   ScrapQuotaArgs,
@@ -13,9 +12,11 @@ import type {
 import { AUTH_FILE_PATH, NATIONALITY_ID_VERIFICATION_URL } from './constants.ts';
 import { createCustomer } from './factories.ts';
 import {
+  closeBrowserOnError,
   deleteFileAsync,
   ensureFlaggedNationalityIdsFileExists,
   isEmpty,
+  isFirstIteration,
   readFileAsync,
   tryCatch,
   updateFlaggedNationalityIdsFile,
@@ -52,7 +53,7 @@ export async function getIsAuthenticated() {
   return currentUrl === NATIONALITY_ID_VERIFICATION_URL;
 }
 
-export async function login() {
+export async function login({ identifier, pin }: LoginArgs) {
   const browser = await chromium.launch({
     headless: false,
     args: ['--start-maximized'],
@@ -62,18 +63,25 @@ export async function login() {
   });
   const page = await context.newPage();
 
-  const loginPage = new LoginPage(page);
+  await closeBrowserOnError({
+    page,
+    context,
+    browser,
+    callback: async () => {
+      const loginPage = new LoginPage(page);
 
-  await loginPage.goto({ waitUntil: 'networkidle' });
-  await loginPage.fillIdentifierInput(authConfig.identifier);
-  await loginPage.fillPinInput(authConfig.pin);
-  await loginPage.submitLoginForm();
-  await loginPage.closeCarousel();
-  await loginPage.saveAuth();
+      await loginPage.goto({ waitUntil: 'networkidle' });
+      await loginPage.fillIdentifierInput(identifier);
+      await loginPage.fillPinInput(pin);
+      await loginPage.submitLoginForm();
+      await loginPage.closeCarousel();
+      await loginPage.saveAuth();
 
-  await page.close();
-  await context.close();
-  await browser.close();
+      await page.close();
+      await context.close();
+      await browser.close();
+    },
+  });
 }
 
 export async function logout() {
@@ -94,14 +102,22 @@ export async function logout() {
   });
   const page = await context.newPage();
 
-  const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
+  await closeBrowserOnError({
+    page,
+    context,
+    browser,
+    callback: async () => {
+      const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  await nationalityIdVerificationPage.logout();
-  await deleteFileAsync(filePath);
+      await nationalityIdVerificationPage.goto();
+      await nationalityIdVerificationPage.logout();
+      await deleteFileAsync(filePath);
 
-  await page.close();
-  await context.close();
-  await browser.close();
+      await page.close();
+      await context.close();
+      await browser.close();
+    },
+  });
 }
 
 export async function scrapQuotaAllocation({
@@ -133,16 +149,14 @@ export async function scrapQuotaAllocation({
   return quotaAllocation;
 }
 
-export async function scrapQuotaAllocations({
-  page,
-  nationalityId,
-  customerTypes,
-}: ScrapQuotaAllocationsArgs) {
+export async function scrapQuotaAllocations({ page, customer }: ScrapQuotaAllocationsArgs) {
   const quotaAllocations = [];
   const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  for (const selectedCustomerType of customerTypes) {
-    const customer = (await nationalityIdVerificationPage.getCustomer(nationalityId)) as Customer;
+  for (const [index, selectedCustomerType] of customer.getTypes().entries()) {
+    if (!isFirstIteration(index)) {
+      await nationalityIdVerificationPage.getCustomer(customer.getNationalityId());
+    }
 
     const quotaAllocation = await scrapQuotaAllocation({
       page,
@@ -179,13 +193,9 @@ export async function scrapQuota({
     return;
   }
 
-  await nationalityIdVerificationPage.goto();
-  await nationalityIdVerificationPage.waitForTimeout();
-
   const quotaAllocations = await scrapQuotaAllocations({
     page,
-    nationalityId: customer.getNationalityId(),
-    customerTypes: customer.getTypes(),
+    customer,
   });
 
   if (isEmpty(quotaAllocations)) {
@@ -215,17 +225,24 @@ export async function scrapQuotas() {
   });
   const page = await context.newPage();
 
-  const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
+  await closeBrowserOnError({
+    page,
+    context,
+    browser,
+    callback: async () => {
+      const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  await nationalityIdVerificationPage.goto();
+      await nationalityIdVerificationPage.goto();
 
-  const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists();
+      const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists();
 
-  for (const flaggedNationalityId of flaggedNationalityIds) {
-    await scrapQuota({ page, flaggedNationalityId });
-  }
+      for (const flaggedNationalityId of flaggedNationalityIds) {
+        await scrapQuota({ page, flaggedNationalityId });
+      }
 
-  await page.close();
-  await context.close();
-  await browser.close();
+      await page.close();
+      await context.close();
+      await browser.close();
+    },
+  });
 }
