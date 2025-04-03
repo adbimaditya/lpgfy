@@ -8,6 +8,7 @@ import Customer from './customer.ts';
 
 export default class Retailer extends Customer implements CustomerScraper {
   private readonly name: CustomerType = 'Pengecer';
+  private readonly selectionLabel: string = 'Sub Pangkalan';
   private readonly page: Page;
 
   constructor(page: Page, args: CustomerArgs) {
@@ -20,8 +21,14 @@ export default class Retailer extends Customer implements CustomerScraper {
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
     if (this.hasMultipleTypes()) {
-      await nationalityIdVerificationPage.selectCustomerType(this.name);
+      await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
       await nationalityIdVerificationPage.continueTransaction();
+
+      if (!this.hasSimilarRegisterLocation()) {
+        await nationalityIdVerificationPage.closeRetailerLocationDialog();
+        await nationalityIdVerificationPage.closeCustomerTypeSelectionDialog();
+        return false;
+      }
     }
 
     return true;

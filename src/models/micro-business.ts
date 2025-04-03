@@ -8,6 +8,7 @@ import Customer from './customer.ts';
 
 export default class MicroBusiness extends Customer implements CustomerScraper {
   private readonly name: CustomerType = 'Usaha Mikro';
+  private readonly selectionLabel: string = 'Usaha Mikro';
   private readonly page: Page;
 
   constructor(page: Page, args: CustomerArgs) {
@@ -32,17 +33,17 @@ export default class MicroBusiness extends Customer implements CustomerScraper {
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
     if (this.hasMultipleTypes()) {
-      await nationalityIdVerificationPage.selectCustomerType(this.name);
+      await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
       await nationalityIdVerificationPage.continueTransaction();
     }
 
     if (!this.isEligible() && !this.hasRecommendationLetter()) {
-      await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
+      await nationalityIdVerificationPage.closeCustomerTypeSelectionDialog();
       return false;
     }
 
     if (this.isEligible() && !this.hasRecommendationLetter()) {
-      await this.page.getByRole('button', { name: 'Lewati, Lanjut Transaksi' }).click();
+      await nationalityIdVerificationPage.continueTransactionForDelayedUpdate();
     }
 
     return true;

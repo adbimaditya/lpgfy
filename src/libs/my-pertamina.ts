@@ -10,7 +10,7 @@ import type {
   ScrapQuotaAllocationsArgs,
   ScrapQuotaArgs,
 } from './args.ts';
-import { AUTH_FILE_PATH, NATIONALITY_ID_VERIFICATION_URL } from './constants.ts';
+import { AUTH_FILE_PATH, NATIONALITY_ID_VERIFICATION_URL, PROFILE_FILE_PATH } from './constants.ts';
 import { createCustomer } from './factories.ts';
 import {
   closeBrowserOnError,
@@ -21,6 +21,7 @@ import {
   tryCatch,
   updateFlaggedNationalityIdsFile,
   updateQuotasFile,
+  writeFileAsync,
 } from './utils.ts';
 
 export async function getIsAuthenticated() {
@@ -74,6 +75,13 @@ export async function login({ identifier, pin }: LoginArgs) {
       await loginPage.fillIdentifierInput(identifier);
       await loginPage.fillPinInput(pin);
       await loginPage.submitLoginForm();
+
+      const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
+
+      const profile = await nationalityIdVerificationPage.getProfile();
+
+      await writeFileAsync(PROFILE_FILE_PATH, profile);
+
       await loginPage.closeCarousel();
       await loginPage.saveAuth();
 
@@ -107,6 +115,7 @@ export async function logout() {
       await nationalityIdVerificationPage.goto();
       await nationalityIdVerificationPage.logout();
       await deleteFileAsync(filePath);
+      await deleteFileAsync(PROFILE_FILE_PATH);
 
       await page.close();
       await context.close();
@@ -127,6 +136,7 @@ export async function scrapQuotaAllocation({
       encryptedFamilyId: customer.getEncryptedFamilyId(),
       customerTypes: customer.getTypes(),
       customerFlags: customer.getFlags(),
+      profile: customer.getBaseProfile(),
     },
     selectedCustomerType,
   });
@@ -148,7 +158,7 @@ export async function scrapQuotaAllocations({ page, customer }: ScrapQuotaAlloca
   const quotaAllocations = [];
   const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
-  for (const [index, selectedCustomerType] of customer.getTypes().entries()) {
+  for (const [index, selectedCustomerType] of customer.getTypeNames().entries()) {
     if (!isFirstIteration(index)) {
       await nationalityIdVerificationPage.getCustomer(customer.getNationalityId());
     }

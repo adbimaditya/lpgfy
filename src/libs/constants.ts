@@ -6,6 +6,7 @@ export const NATIONALITY_ID_VERIFICATION_URL = `${BASE_URL}/merchant/app/verific
 export const SALE_URL = `${BASE_URL}/merchant/app/sale`;
 
 export const BASE_ENDPOINT = 'https://api-map.my-pertamina.id';
+export const PROFILE_ENDPOINT = `${BASE_ENDPOINT}/general/v1/users/profile`;
 export const NATIONALITY_ID_VERIFICATION_ENDPOINT = `${BASE_ENDPOINT}/customers/v2/verify-nik`;
 export const QUOTA_ENDPOINT = (nationalityId: string) =>
   `${BASE_ENDPOINT}/general/v4/customers/${nationalityId}/quota`;
@@ -17,6 +18,7 @@ export const CUSTOMER_TYPES = ['Rumah Tangga', 'Usaha Mikro', 'Pengecer'] as con
 export const CHANNEL_INJECTS = ['tnp2k', 'maplite', 'bpum'] as const;
 
 export const AUTH_FILE_PATH = path.resolve('public', 'data', 'auth.json');
+export const PROFILE_FILE_PATH = path.resolve('public', 'data', 'profile.json');
 export const FLAGGED_NATIONALITY_IDS_FILE_PATH = path.resolve(
   'public',
   'data',

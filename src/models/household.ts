@@ -8,6 +8,7 @@ import Customer from './customer.ts';
 
 export default class Household extends Customer implements CustomerScraper {
   private readonly name: CustomerType = 'Rumah Tangga';
+  private readonly selectionLabel: CustomerType = 'Rumah Tangga';
   private readonly page: Page;
 
   constructor(page: Page, args: CustomerArgs) {
@@ -20,7 +21,7 @@ export default class Household extends Customer implements CustomerScraper {
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
     if (this.hasMultipleTypes()) {
-      await nationalityIdVerificationPage.selectCustomerType(this.name);
+      await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
       await nationalityIdVerificationPage.continueTransaction();
     }
 

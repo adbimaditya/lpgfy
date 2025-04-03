@@ -10,6 +10,13 @@ export const flaggedNationalityIdSchema = z.object({
 });
 export const flaggedNationalityIdsSchema = z.array(flaggedNationalityIdSchema);
 
+export const profileSchema = z.object({
+  nationalityId: nationalityIdSchema,
+  registrationId: z.string(),
+  mid: z.string().nullable(),
+  name: z.string(),
+});
+
 export const quotaAllocationSchema = z.object({
   type: z.enum(CUSTOMER_TYPES),
   quantity: z.number(),
@@ -21,5 +28,6 @@ export const quotaSchema = z.object({
 export const quotasSchema = z.array(quotaSchema);
 
 export type FlaggedNationalityId = z.infer<typeof flaggedNationalityIdSchema>;
+export type Profile = z.infer<typeof profileSchema>;
 export type QuotaAllocation = z.infer<typeof quotaAllocationSchema>;
 export type Quota = z.infer<typeof quotaSchema>;

@@ -6,11 +6,17 @@ import {
   NATIONALITY_ID_VERIFICATION_DELAY,
   NATIONALITY_ID_VERIFICATION_ENDPOINT,
   NATIONALITY_ID_VERIFICATION_URL,
+  PROFILE_ENDPOINT,
   QUOTA_ENDPOINT,
 } from '../libs/constants.ts';
-import { customerResponseToCustomer, quotaRecordToQuotaAllocation } from '../libs/dto.ts';
-import { encodeCustomerType } from '../libs/utils.ts';
+import {
+  customerResponseToCustomer,
+  profileRecordToProfile,
+  quotaRecordToQuotaAllocation,
+} from '../libs/dto.ts';
+import { encodeCustomerType, getProfileFromFile } from '../libs/utils.ts';
 import { customerResponseSchema } from '../schemas/customer-record.ts';
+import { profileResponseSchema } from '../schemas/profile-record.ts';
 import { quotaResponseSchema } from '../schemas/quota-record.ts';
 
 export default class NationalityIdVerificationPage {
@@ -39,10 +45,6 @@ export default class NationalityIdVerificationPage {
     await this.page.getByRole('button', { name: 'Cek' }).click();
   }
 
-  public async closeCustomerTypeSelectionDialog() {
-    await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
-  }
-
   public async selectCustomerType(customerType: string) {
     await this.page.getByRole('dialog').getByText(customerType).click();
   }
@@ -51,7 +53,35 @@ export default class NationalityIdVerificationPage {
     await this.page.getByRole('dialog').getByRole('button', { name: 'Lanjut Transaksi' }).click();
   }
 
+  public async continueTransactionForDelayedUpdate() {
+    await this.page.getByRole('button', { name: 'Lewati, Lanjut Transaksi' }).click();
+  }
+
+  public async closeCustomerTypeSelectionDialog() {
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
+  }
+
+  public async closeRetailerLocationDialog() {
+    await this.page.getByTestId('btnCancel').filter({ hasText: 'Tutup' }).click();
+  }
+
+  public async getProfile() {
+    const responsePromise = this.page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' && response.request().url() === PROFILE_ENDPOINT,
+    );
+
+    const response = await responsePromise;
+    const apiResponse = await response.json();
+    const profileResponse = profileResponseSchema.parse(apiResponse);
+    const profile = profileRecordToProfile(profileResponse);
+
+    return profile;
+  }
+
   public async getCustomer(nationalityId: string) {
+    const profile = await getProfileFromFile();
+
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
@@ -77,6 +107,7 @@ export default class NationalityIdVerificationPage {
     const customerResponse = customerResponseSchema.parse(apiResponse);
     const customer = customerResponseToCustomer({
       customerResponse: { ...customerResponse, data: { ...customerResponse.data, nationalityId } },
+      profile,
     });
 
     return customer;

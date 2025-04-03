@@ -4,11 +4,16 @@ import path from 'path';
 import {
   flaggedNationalityIdsSchema,
   nationalityIdsSchema,
+  profileSchema,
   type Quota,
   quotasSchema,
 } from '../schemas/file.ts';
 import type { CloseBrowserOnErrorArgs } from './args.ts';
-import { FLAGGED_NATIONALITY_IDS_FILE_PATH, QUOTAS_FILE_PATH } from './constants.ts';
+import {
+  FLAGGED_NATIONALITY_IDS_FILE_PATH,
+  PROFILE_FILE_PATH,
+  QUOTAS_FILE_PATH,
+} from './constants.ts';
 import type { CustomerType, Result } from './types.ts';
 
 export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
@@ -99,6 +104,13 @@ export async function updateFlaggedNationalityIdsFile(nationalityId: string) {
       flag: flaggedNationalityId.nationalityId === nationalityId || flaggedNationalityId.flag,
     })),
   );
+}
+
+export async function getProfileFromFile() {
+  const profileFile = await readFileAsync(PROFILE_FILE_PATH);
+  const profile = profileSchema.parse(profileFile);
+
+  return profile;
 }
 
 export async function ensureQuotasFileExists() {

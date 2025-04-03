@@ -2,7 +2,7 @@ import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import Customer from '../models/customer.ts';
 import type { CustomerResponse } from '../schemas/customer-record.ts';
-import type { FlaggedNationalityId } from '../schemas/file.ts';
+import type { FlaggedNationalityId, Profile } from '../schemas/file.ts';
 import type { QuotaRecord } from '../schemas/quota-record.ts';
 import type { CustomerFlags, CustomerType } from './types.ts';
 
@@ -20,8 +20,12 @@ export type GetQuotaAllocationArgs = {
 export type CustomerArgs = {
   nationalityId: string;
   encryptedFamilyId?: string;
-  customerTypes: CustomerType[];
+  customerTypes: {
+    name: CustomerType;
+    mid: string | null;
+  }[];
   customerFlags: CustomerFlags;
+  profile: Profile;
 };
 
 export type CreateCustomerArgs = {
@@ -32,6 +36,7 @@ export type CreateCustomerArgs = {
 
 export type CustomerResponseToCustomerArgs = {
   customerResponse: CustomerResponse;
+  profile: Profile;
 };
 
 export type QuotaRecordToQuotaAllocationArgs = {
