@@ -38,11 +38,11 @@ export default class MicroBusiness extends Customer implements CustomerScraper {
     }
 
     if (!this.isEligible() && !this.hasRecommendationLetter()) {
-      await nationalityIdVerificationPage.closeCustomerTypeSelectionDialog();
+      await nationalityIdVerificationPage.closeUpdateMicroBusinessDataDialog();
       return false;
     }
 
-    if (this.isEligible() && !this.hasRecommendationLetter()) {
+    if (!this.hasRecommendationLetter()) {
       await nationalityIdVerificationPage.continueTransactionForDelayedUpdate();
     }
 

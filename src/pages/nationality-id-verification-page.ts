@@ -41,7 +41,7 @@ export default class NationalityIdVerificationPage {
   }
 
   public async submitNationalityIdVerificationForm() {
-    await this.page.getByRole('heading', { name: 'NIK KTP Pelanggan' }).click();
+    await this.page.getByTestId('btnNav/app/verification-nik').click();
     await this.page.getByRole('button', { name: 'Cek' }).click();
   }
 
@@ -61,8 +61,17 @@ export default class NationalityIdVerificationPage {
     await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
   }
 
+  public async closeUpdateMicroBusinessDataDialog() {
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Kembali' }).click();
+  }
+
   public async closeRetailerLocationDialog() {
     await this.page.getByTestId('btnCancel').filter({ hasText: 'Tutup' }).click();
+  }
+
+  public async logout() {
+    await this.page.getByTestId('btnLogout').click();
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Keluar' }).click();
   }
 
   public async getProfile() {
@@ -80,7 +89,7 @@ export default class NationalityIdVerificationPage {
   }
 
   public async getCustomer(nationalityId: string) {
-    const profile = await getProfileFromFile();
+    await this.fillNationalityIdVerificationInput(nationalityId);
 
     const responsePromise = this.page.waitForResponse(
       (response) =>
@@ -89,20 +98,19 @@ export default class NationalityIdVerificationPage {
           `${NATIONALITY_ID_VERIFICATION_ENDPOINT}?nationalityId=${nationalityId}`,
     );
 
-    await this.fillNationalityIdVerificationInput(nationalityId);
     await this.submitNationalityIdVerificationForm();
 
     const response = await responsePromise;
 
-    if (!response.ok() && response.status() === status.NOT_FOUND) {
-      await this.closeCustomerTypeSelectionDialog();
+    if (!response.ok()) {
+      if (response.status() === status.NOT_FOUND) {
+        await this.closeCustomerTypeSelectionDialog();
+      }
+
       return null;
     }
 
-    if (!response.ok() && response.status() === status.BAD_REQUEST) {
-      return null;
-    }
-
+    const profile = await getProfileFromFile();
     const apiResponse = await response.json();
     const customerResponse = customerResponseSchema.parse(apiResponse);
     const customer = customerResponseToCustomer({
@@ -134,10 +142,5 @@ export default class NationalityIdVerificationPage {
     });
 
     return quotaAllocation;
-  }
-
-  public async logout() {
-    await this.page.getByTestId('btnLogout').click();
-    await this.page.getByRole('dialog').getByRole('button', { name: 'Keluar' }).click();
   }
 }

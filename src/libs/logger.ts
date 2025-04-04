@@ -8,7 +8,7 @@ const logger = createLogger({
 });
 
 export const playwrightLogger: Logger = {
-  isEnabled: () => true,
+  isEnabled: () => false,
   log: (name, severity, message, args) => {
     logger.log({
       level: severity,

@@ -17,17 +17,26 @@ export default class Retailer extends Customer implements CustomerScraper {
     this.page = page;
   }
 
+  public hasSimilarRegisterLocation() {
+    const types = this.getTypes();
+    const baseProfile = this.getBaseProfile();
+    const retailer = types.find((type) => type.name === 'Pengecer');
+
+    return Boolean(retailer && retailer.mid === baseProfile.mid);
+  }
+
   private async handleBureaucracy() {
     const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
 
     if (this.hasMultipleTypes()) {
       await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
       await nationalityIdVerificationPage.continueTransaction();
+    }
 
-      if (!this.hasSimilarRegisterLocation()) {
-        await nationalityIdVerificationPage.closeRetailerLocationDialog();
-        return false;
-      }
+    if (!this.hasSimilarRegisterLocation()) {
+      await nationalityIdVerificationPage.closeRetailerLocationDialog();
+      await this.page.reload(); //* Fix strange behavior when waiting for response after this iteration
+      return false;
     }
 
     return true;

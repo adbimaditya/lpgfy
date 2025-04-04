@@ -53,10 +53,4 @@ export default class Customer {
   public hasMultipleTypes() {
     return this.types.length >= 2;
   }
-
-  public hasSimilarRegisterLocation() {
-    const retailer = this.types.find((type) => type.name === 'Pengecer');
-
-    return retailer && retailer.mid === this.baseProfile.mid;
-  }
 }

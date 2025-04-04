@@ -128,7 +128,10 @@ export async function scrapQuotaAllocations({ page, customer }: ScrapQuotaAlloca
 
   for (const [index, selectedCustomerType] of customer.getTypeNames().entries()) {
     if (!isFirstIteration(index)) {
-      await nationalityIdVerificationPage.getCustomer(customer.getNationalityId());
+      await nationalityIdVerificationPage.fillNationalityIdVerificationInput(
+        customer.getNationalityId(),
+      );
+      await nationalityIdVerificationPage.submitNationalityIdVerificationForm();
     }
 
     const quotaAllocation = await scrapQuotaAllocation({
@@ -140,9 +143,9 @@ export async function scrapQuotaAllocations({ page, customer }: ScrapQuotaAlloca
     if (quotaAllocation) {
       quotaAllocations.push(quotaAllocation);
     }
-  }
 
-  await nationalityIdVerificationPage.waitForTimeout();
+    await nationalityIdVerificationPage.waitForTimeout();
+  }
 
   return quotaAllocations;
 }

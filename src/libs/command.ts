@@ -5,7 +5,7 @@ import path from 'path';
 import { identifierSchema, pinSchema } from '../schemas/auth.ts';
 import { getIsAuthenticated, login, logout, scrapQuotas } from './my-pertamina.ts';
 import type { ScrapQuotasActionArgs } from './types.ts';
-import { ensureFlaggedNationalityIdsFileExists } from './utils.ts';
+import { ensureFlaggedNationalityIdsFileExists, retry } from './utils.ts';
 
 export async function loginAction() {
   const isAuthenticated = await getIsAuthenticated();
@@ -45,7 +45,7 @@ export async function loginAction() {
   const spinner = ora('Logging in...');
 
   spinner.start();
-  await login({ identifier, pin });
+  await retry(() => login({ identifier, pin }));
   spinner.succeed('You have successfully logged in.');
 }
 
@@ -60,7 +60,7 @@ export async function logoutAction() {
   const spinner = ora('Logging out...');
 
   spinner.start();
-  await logout();
+  await retry(() => logout());
   spinner.succeed('You have successfully logged out.');
 }
 
@@ -87,6 +87,6 @@ export async function scrapQuotasAction({ file }: ScrapQuotasActionArgs) {
   const spinner = ora('Scraping quotas...');
 
   spinner.start();
-  await scrapQuotas(flaggedNationalityIds);
+  await retry(() => scrapQuotas(flaggedNationalityIds));
   spinner.succeed('Quota scraping completed successfully.');
 }

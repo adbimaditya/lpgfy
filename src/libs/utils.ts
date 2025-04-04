@@ -1,4 +1,5 @@
 import { type BrowserContextOptions, chromium, type LaunchOptions } from '@playwright/test';
+import asyncRetry, { type RetryFunction } from 'async-retry';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,6 +13,7 @@ import {
 import type { CloseBrowserArgs, CloseBrowserOnErrorArgs, CreateBrowserArgs } from './args.ts';
 import {
   FLAGGED_NATIONALITY_IDS_FILE_PATH,
+  MY_LUCKY_NUMBER,
   PROFILE_FILE_PATH,
   QUOTAS_FILE_PATH,
 } from './constants.ts';
@@ -28,12 +30,21 @@ export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Resul
   }
 }
 
+export async function retry(callback: RetryFunction<void, Error>) {
+  await asyncRetry(callback, {
+    retries: MY_LUCKY_NUMBER,
+    onRetry: (err) => {
+      logger.error(`🔴 ${err.message}`);
+    },
+  });
+}
+
 export function isEmpty(data: unknown[]) {
   return data.length === 0;
 }
 
 export function isFirstIteration(index: number) {
-  return index === 0;
+  return Boolean(index === 0);
 }
 
 export function encodeCustomerType(customerType: CustomerType) {
@@ -129,10 +140,17 @@ export async function ensureQuotasFileExists() {
   return quotas;
 }
 
+export function getUniqueQuotas(quotas: Quota[], newQuota: Quota) {
+  return [...quotas, newQuota].filter(
+    (quota, index, self) =>
+      self.findIndex((q) => q.nationalityId === quota.nationalityId) === index,
+  );
+}
+
 export async function updateQuotasFile(quota: Quota) {
   const quotas = await ensureQuotasFileExists();
 
-  await writeFileAsync(QUOTAS_FILE_PATH, [...quotas, quota]);
+  await writeFileAsync(QUOTAS_FILE_PATH, getUniqueQuotas(quotas, quota));
 }
 
 export async function createBrowser({
@@ -178,8 +196,6 @@ export async function closeBrowserOnError({ browser, callback }: CloseBrowserOnE
   const { error } = await tryCatch(callback());
 
   if (error) {
-    logger.error(error.message);
-
     await closeBrowser({ browser });
   }
 }
