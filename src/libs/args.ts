@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import type { Browser, BrowserContextOptions, LaunchOptions, Page } from '@playwright/test';
 
 import Customer from '../models/customer.ts';
 import type { CustomerResponse } from '../schemas/customer-record.ts';
@@ -60,9 +60,16 @@ export type ScrapQuotaArgs = {
   flaggedNationalityId: FlaggedNationalityId;
 };
 
+export type CreateBrowserArgs = {
+  launchOptions?: LaunchOptions;
+  browserContextOptions?: BrowserContextOptions;
+};
+
+export type CloseBrowserArgs = {
+  browser: Browser;
+};
+
 export type CloseBrowserOnErrorArgs = {
-  page: Page;
-  context: BrowserContext;
   browser: Browser;
   callback: () => Promise<void>;
 };

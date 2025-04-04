@@ -1,3 +1,4 @@
+import { type BrowserContextOptions, chromium, type LaunchOptions } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,12 +9,13 @@ import {
   type Quota,
   quotasSchema,
 } from '../schemas/file.ts';
-import type { CloseBrowserOnErrorArgs } from './args.ts';
+import type { CloseBrowserArgs, CloseBrowserOnErrorArgs, CreateBrowserArgs } from './args.ts';
 import {
   FLAGGED_NATIONALITY_IDS_FILE_PATH,
   PROFILE_FILE_PATH,
   QUOTAS_FILE_PATH,
 } from './constants.ts';
+import logger, { playwrightLogger } from './logger.ts';
 import type { CustomerType, Result } from './types.ts';
 
 export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
@@ -62,9 +64,8 @@ export async function deleteFileAsync(filePath: string) {
 }
 
 export async function ensureFlaggedNationalityIdsFileExists(nationalityIdsFilePath: string) {
-  const filePath = FLAGGED_NATIONALITY_IDS_FILE_PATH;
   const { data: flaggedNationalityIdsFile, error: readError } = await tryCatch(
-    readFileAsync(filePath),
+    readFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH),
   );
 
   if (readError) {
@@ -82,7 +83,7 @@ export async function ensureFlaggedNationalityIdsFileExists(nationalityIdsFilePa
       flag: false,
     }));
 
-    await writeFileAsync(filePath, flaggedNationalityIds);
+    await writeFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH, flaggedNationalityIds);
 
     return flaggedNationalityIds;
   }
@@ -93,12 +94,11 @@ export async function ensureFlaggedNationalityIdsFileExists(nationalityIdsFilePa
 }
 
 export async function updateFlaggedNationalityIdsFile(nationalityId: string) {
-  const filePath = FLAGGED_NATIONALITY_IDS_FILE_PATH;
-  const flaggedNationalityIdsFile = await readFileAsync(filePath);
+  const flaggedNationalityIdsFile = await readFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH);
   const flaggedNationalityIds = flaggedNationalityIdsSchema.parse(flaggedNationalityIdsFile);
 
   await writeFileAsync(
-    filePath,
+    FLAGGED_NATIONALITY_IDS_FILE_PATH,
     flaggedNationalityIds.map((flaggedNationalityId) => ({
       ...flaggedNationalityId,
       flag: flaggedNationalityId.nationalityId === nationalityId || flaggedNationalityId.flag,
@@ -114,13 +114,12 @@ export async function getProfileFromFile() {
 }
 
 export async function ensureQuotasFileExists() {
-  const filePath = QUOTAS_FILE_PATH;
-  const { data: quotasFile, error } = await tryCatch(readFileAsync(filePath));
+  const { data: quotasFile, error } = await tryCatch(readFileAsync(QUOTAS_FILE_PATH));
 
   if (error) {
     const quotas: Quota[] = [];
 
-    await writeFileAsync(filePath, quotas);
+    await writeFileAsync(QUOTAS_FILE_PATH, quotas);
 
     return quotas;
   }
@@ -131,23 +130,56 @@ export async function ensureQuotasFileExists() {
 }
 
 export async function updateQuotasFile(quota: Quota) {
-  const filePath = QUOTAS_FILE_PATH;
   const quotas = await ensureQuotasFileExists();
 
-  await writeFileAsync(filePath, [...quotas, quota]);
+  await writeFileAsync(QUOTAS_FILE_PATH, [...quotas, quota]);
 }
 
-export async function closeBrowserOnError({
-  page,
-  context,
-  browser,
-  callback,
-}: CloseBrowserOnErrorArgs) {
+export async function createBrowser({
+  launchOptions = {},
+  browserContextOptions = {},
+}: CreateBrowserArgs = {}) {
+  const defaultLaunchOptions: LaunchOptions = {
+    headless: false,
+    args: ['--start-maximized'],
+    logger: playwrightLogger,
+    ...launchOptions,
+  };
+
+  const defaultBrowserContextOptions: BrowserContextOptions = {
+    viewport: null,
+    ...browserContextOptions,
+  };
+
+  const browser = await chromium.launch(defaultLaunchOptions);
+  const context = await browser.newContext(defaultBrowserContextOptions);
+  const page = await context.newPage();
+
+  return { browser, context, page };
+}
+
+export async function closeBrowser({ browser }: CloseBrowserArgs) {
+  const contexts = browser.contexts();
+
+  for (const context of contexts) {
+    const pages = context.pages();
+
+    for (const page of pages) {
+      await page.close();
+    }
+
+    await context.close();
+  }
+
+  await browser.close();
+}
+
+export async function closeBrowserOnError({ browser, callback }: CloseBrowserOnErrorArgs) {
   const { error } = await tryCatch(callback());
 
   if (error) {
-    await page.close();
-    await context.close();
-    await browser.close();
+    logger.error(error.message);
+
+    await closeBrowser({ browser });
   }
 }

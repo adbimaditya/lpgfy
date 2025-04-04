@@ -1,5 +1,3 @@
-import { chromium } from '@playwright/test';
-
 import LoginPage from '../pages/login-page.ts';
 import NationalityIdVerificationPage from '../pages/nationality-id-verification-page.ts';
 import SalePage from '../pages/sale-page.ts';
@@ -13,7 +11,9 @@ import type {
 import { AUTH_FILE_PATH, NATIONALITY_ID_VERIFICATION_URL, PROFILE_FILE_PATH } from './constants.ts';
 import { createCustomer } from './factories.ts';
 import {
+  closeBrowser,
   closeBrowserOnError,
+  createBrowser,
   deleteFileAsync,
   isEmpty,
   isFirstIteration,
@@ -25,48 +25,30 @@ import {
 } from './utils.ts';
 
 export async function getIsAuthenticated() {
-  const filePath = AUTH_FILE_PATH;
-  const { error } = await tryCatch(readFileAsync(filePath));
+  const { error } = await tryCatch(readFileAsync(AUTH_FILE_PATH));
 
   if (error) {
     return false;
   }
 
-  const browser = await chromium.launch({
-    headless: false,
-    args: ['--start-maximized'],
+  const { browser, page } = await createBrowser({
+    browserContextOptions: { storageState: AUTH_FILE_PATH },
   });
-  const context = await browser.newContext({
-    storageState: filePath,
-    viewport: null,
-  });
-  const page = await context.newPage();
 
   const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
   await nationalityIdVerificationPage.goto({ waitUntil: 'networkidle' });
   const currentUrl = page.url();
 
-  await page.close();
-  await context.close();
-  await browser.close();
+  await closeBrowser({ browser });
 
   return currentUrl === NATIONALITY_ID_VERIFICATION_URL;
 }
 
 export async function login({ identifier, pin }: LoginArgs) {
-  const browser = await chromium.launch({
-    headless: false,
-    args: ['--start-maximized'],
-  });
-  const context = await browser.newContext({
-    viewport: null,
-  });
-  const page = await context.newPage();
+  const { browser, page } = await createBrowser();
 
   await closeBrowserOnError({
-    page,
-    context,
     browser,
     callback: async () => {
       const loginPage = new LoginPage(page);
@@ -85,41 +67,27 @@ export async function login({ identifier, pin }: LoginArgs) {
       await loginPage.closeCarousel();
       await loginPage.saveAuth();
 
-      await page.close();
-      await context.close();
-      await browser.close();
+      await closeBrowser({ browser });
     },
   });
 }
 
 export async function logout() {
-  const filePath = AUTH_FILE_PATH;
-
-  const browser = await chromium.launch({
-    headless: false,
-    args: ['--start-maximized'],
+  const { browser, page } = await createBrowser({
+    browserContextOptions: { storageState: AUTH_FILE_PATH },
   });
-  const context = await browser.newContext({
-    storageState: filePath,
-    viewport: null,
-  });
-  const page = await context.newPage();
 
   await closeBrowserOnError({
-    page,
-    context,
     browser,
     callback: async () => {
       const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
 
       await nationalityIdVerificationPage.goto();
       await nationalityIdVerificationPage.logout();
-      await deleteFileAsync(filePath);
+      await deleteFileAsync(AUTH_FILE_PATH);
       await deleteFileAsync(PROFILE_FILE_PATH);
 
-      await page.close();
-      await context.close();
-      await browser.close();
+      await closeBrowser({ browser });
     },
   });
 }
@@ -214,19 +182,13 @@ export async function scrapQuota({
 }
 
 export async function scrapQuotas(flaggedNationalityIds: FlaggedNationalityId[]) {
-  const browser = await chromium.launch({
-    headless: false,
-    args: ['--start-maximized'],
+  const { browser, page } = await createBrowser({
+    browserContextOptions: {
+      storageState: AUTH_FILE_PATH,
+    },
   });
-  const context = await browser.newContext({
-    storageState: AUTH_FILE_PATH,
-    viewport: null,
-  });
-  const page = await context.newPage();
 
   await closeBrowserOnError({
-    page,
-    context,
     browser,
     callback: async () => {
       const nationalityIdVerificationPage = new NationalityIdVerificationPage(page);
@@ -237,9 +199,7 @@ export async function scrapQuotas(flaggedNationalityIds: FlaggedNationalityId[])
         await scrapQuota({ page, flaggedNationalityId });
       }
 
-      await page.close();
-      await context.close();
-      await browser.close();
+      await closeBrowser({ browser });
     },
   });
 }

@@ -26,7 +26,6 @@ export default class Retailer extends Customer implements CustomerScraper {
 
       if (!this.hasSimilarRegisterLocation()) {
         await nationalityIdVerificationPage.closeRetailerLocationDialog();
-        await nationalityIdVerificationPage.closeCustomerTypeSelectionDialog();
         return false;
       }
     }
