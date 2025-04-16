@@ -1,4 +1,4 @@
-import { QuotaAllocation } from '../schemas/file.ts';
+import { QuotaAllocation } from './types.ts';
 
 export interface CustomerScraper {
   scrapQuotaAllocation(): Promise<QuotaAllocation | null>;

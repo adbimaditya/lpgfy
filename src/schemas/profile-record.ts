@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { nationalityIdSchema } from './customer-record.ts';
 import { createResponseSchema } from './response.ts';
 
 export const profileRecordSchema = z.object({
@@ -21,7 +22,7 @@ export const profileRecordSchema = z.object({
   isSubsidiProduct: z.boolean(),
   storePhoneNumber: z.string(),
   email: z.string(),
-  nationalityId: z.string(),
+  nationalityId: nationalityIdSchema,
   ditrictName: z.string(),
   villageName: z.string(),
   zipcode: z.string(),
@@ -40,6 +41,3 @@ export const profileRecordSchema = z.object({
 });
 
 export const profileResponseSchema = createResponseSchema(profileRecordSchema);
-
-export type ProfileRecord = z.infer<typeof profileRecordSchema>;
-export type ProfileResponse = z.infer<typeof profileResponseSchema>;

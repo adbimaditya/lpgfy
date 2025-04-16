@@ -10,5 +10,3 @@ export const responseSchema = z.object({
 export function createResponseSchema<T extends z.ZodTypeAny>(dataSchema: T) {
   return responseSchema.extend({ data: dataSchema });
 }
-
-export type Response = z.infer<typeof responseSchema>;

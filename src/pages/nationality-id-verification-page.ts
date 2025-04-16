@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test';
 import status from 'http-status';
 
-import type { GetQuotaAllocationArgs } from '../libs/args.ts';
+import type { WaitForCustomerArgs, WaitForQuotaAllocationArgs } from '../libs/args.ts';
 import {
+  AUTH_FILE_PATH,
   NATIONALITY_ID_VERIFICATION_DELAY,
   NATIONALITY_ID_VERIFICATION_ENDPOINT,
   NATIONALITY_ID_VERIFICATION_URL,
@@ -12,9 +13,10 @@ import {
 import {
   customerResponseToCustomer,
   profileRecordToProfile,
-  quotaRecordToQuotaAllocation,
+  quotaResponseToQuotaAllocation,
 } from '../libs/dto.ts';
-import { encodeCustomerType, getProfileFromFile } from '../libs/utils.ts';
+import { getProfileFromFile } from '../libs/file.ts';
+import { encodeCustomerType } from '../libs/utils.ts';
 import { customerResponseSchema } from '../schemas/customer-record.ts';
 import { profileResponseSchema } from '../schemas/profile-record.ts';
 import { quotaResponseSchema } from '../schemas/quota-record.ts';
@@ -36,6 +38,10 @@ export default class NationalityIdVerificationPage {
     await this.page.waitForTimeout(NATIONALITY_ID_VERIFICATION_DELAY);
   }
 
+  public async saveAuth() {
+    await this.page.context().storageState({ path: AUTH_FILE_PATH });
+  }
+
   public async fillNationalityIdVerificationInput(nationalityId: string) {
     await this.page.getByPlaceholder('Masukkan 16 digit NIK KTP Pelanggan').fill(nationalityId);
   }
@@ -43,6 +49,11 @@ export default class NationalityIdVerificationPage {
   public async submitNationalityIdVerificationForm() {
     await this.page.getByTestId('btnNav/app/verification-nik').click();
     await this.page.getByRole('button', { name: 'Cek' }).click();
+  }
+
+  public async logout() {
+    await this.page.getByTestId('btnLogout').click();
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Keluar' }).click();
   }
 
   public async selectCustomerType(customerType: string) {
@@ -69,12 +80,11 @@ export default class NationalityIdVerificationPage {
     await this.page.getByTestId('btnCancel').filter({ hasText: 'Tutup' }).click();
   }
 
-  public async logout() {
-    await this.page.getByTestId('btnLogout').click();
-    await this.page.getByRole('dialog').getByRole('button', { name: 'Keluar' }).click();
+  public async closeCarousel() {
+    await this.page.getByTestId(/^btnClose.*/).click();
   }
 
-  public async getProfile() {
+  public async waitForProfile() {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' && response.request().url() === PROFILE_ENDPOINT,
@@ -88,9 +98,7 @@ export default class NationalityIdVerificationPage {
     return profile;
   }
 
-  public async getCustomer(nationalityId: string) {
-    await this.fillNationalityIdVerificationInput(nationalityId);
-
+  public async waitForCustomer({ nationalityId, trigger }: WaitForCustomerArgs) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
@@ -98,7 +106,7 @@ export default class NationalityIdVerificationPage {
           `${NATIONALITY_ID_VERIFICATION_ENDPOINT}?nationalityId=${nationalityId}`,
     );
 
-    await this.submitNationalityIdVerificationForm();
+    await trigger();
 
     const response = await responsePromise;
 
@@ -121,11 +129,11 @@ export default class NationalityIdVerificationPage {
     return customer;
   }
 
-  public async getQuotaAllocation({
+  public async waitForQuotaAllocation({
     nationalityId,
     encryptedFamilyId,
     selectedCustomerType,
-  }: GetQuotaAllocationArgs) {
+  }: WaitForQuotaAllocationArgs) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
@@ -135,10 +143,10 @@ export default class NationalityIdVerificationPage {
 
     const response = await responsePromise;
     const apiResponse = await response.json();
-    const { data: quotaRecord } = quotaResponseSchema.parse(apiResponse);
-    const quotaAllocation = quotaRecordToQuotaAllocation({
+    const quotaResponse = quotaResponseSchema.parse(apiResponse);
+    const quotaAllocation = quotaResponseToQuotaAllocation({
+      quotaResponse,
       customerType: selectedCustomerType,
-      quotaRecord,
     });
 
     return quotaAllocation;

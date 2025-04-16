@@ -1,12 +1,17 @@
 import Customer from '../models/customer.ts';
-import type { Profile, QuotaAllocation } from '../schemas/file.ts';
-import type { ProfileResponse } from '../schemas/profile-record.ts';
 import type {
   CustomerArgs,
   CustomerResponseToCustomerArgs,
-  QuotaRecordToQuotaAllocationArgs,
+  QuotaResponseToQuotaAllocationArgs,
+  TransactionResponseToTransactionArgs,
 } from './args.ts';
-import type { CustomerType } from './types.ts';
+import type {
+  CustomerType,
+  Profile,
+  ProfileResponse,
+  QuotaAllocation,
+  Transaction,
+} from './types.ts';
 
 export function profileRecordToProfile({ data }: ProfileResponse): Profile {
   return {
@@ -21,7 +26,7 @@ export function customerResponseToCustomer({
   customerResponse: { data },
   profile,
 }: CustomerResponseToCustomerArgs): Customer {
-  const args: CustomerArgs = {
+  const customerArgs: CustomerArgs = {
     nationalityId: data.nationalityId,
     encryptedFamilyId: data.familyIdEncrypted,
     customerTypes: data.customerTypes.map((customerType) => ({
@@ -40,17 +45,31 @@ export function customerResponseToCustomer({
     profile,
   };
 
-  const customer = new Customer(args);
+  const customer = new Customer(customerArgs);
 
   return customer;
 }
 
-export function quotaRecordToQuotaAllocation({
+export function quotaResponseToQuotaAllocation({
+  quotaResponse: { data },
   customerType,
-  quotaRecord,
-}: QuotaRecordToQuotaAllocationArgs): QuotaAllocation {
+}: QuotaResponseToQuotaAllocationArgs): QuotaAllocation {
   return {
-    type: customerType,
-    quantity: quotaRecord.quotaRemaining.daily,
+    customerType,
+    quantity: data.quotaRemaining.daily,
+  };
+}
+
+export function transactionResponseToTransaction({
+  transactionResponse: { data },
+  order,
+}: TransactionResponseToTransactionArgs): Transaction {
+  return {
+    id: data.transactionId,
+    order,
+    allocation: {
+      customerType: order.customerType,
+      quantity: data.quotaRemaining ?? 0,
+    },
   };
 }

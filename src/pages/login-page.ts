@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { AUTH_FILE_PATH, LOGIN_URL } from '../libs/constants.ts';
+import { LOGIN_URL } from '../libs/constants.ts';
 
 export default class LoginPage {
   private readonly url: string = LOGIN_URL;
@@ -24,13 +24,5 @@ export default class LoginPage {
 
   public async submitLoginForm() {
     await this.page.getByRole('button', { name: 'Masuk' }).click();
-  }
-
-  public async saveAuth() {
-    await this.page.context().storageState({ path: AUTH_FILE_PATH });
-  }
-
-  public async closeCarousel() {
-    await this.page.getByTestId(/^btnClose.*/).click();
   }
 }

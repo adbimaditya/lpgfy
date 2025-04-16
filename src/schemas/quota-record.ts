@@ -12,6 +12,3 @@ export const quotaRecordSchema = z.object({
 });
 
 export const quotaResponseSchema = createResponseSchema(quotaRecordSchema);
-
-export type QuotaRecord = z.infer<typeof quotaRecordSchema>;
-export type QuotaResponse = z.infer<typeof quotaResponseSchema>;

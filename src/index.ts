@@ -1,6 +1,12 @@
 import { Command } from 'commander';
 
-import { loginAction, logoutAction, scrapQuotasAction } from './libs/command.ts';
+import {
+  createOrdersAction,
+  generateOrdersFromQuotasAction,
+  loginAction,
+  logoutAction,
+  scrapQuotasAction,
+} from './libs/command.ts';
 
 const program = new Command();
 
@@ -24,5 +30,14 @@ program
   .requiredOption('-f, --file <path>', 'Path to the file to process')
   .description('Scrap LPG quota information.')
   .action(scrapQuotasAction);
+program
+  .command('create-orders')
+  .requiredOption('-f, --file <path>', 'Path to the file to process')
+  .description('Create new orders from the provided file.')
+  .action(createOrdersAction);
+program
+  .command('generate-orders')
+  .description('Generate orders from the quotas file.')
+  .action(generateOrdersFromQuotasAction);
 
 await program.parseAsync(process.argv);

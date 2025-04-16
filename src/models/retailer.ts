@@ -35,7 +35,7 @@ export default class Retailer extends Customer implements CustomerScraper {
 
     if (!this.hasSimilarRegisterLocation()) {
       await nationalityIdVerificationPage.closeRetailerLocationDialog();
-      await this.page.reload(); //* Fix strange behavior when waiting for response after this iteration
+      await this.page.reload(); // * Fix strange behavior when waiting for response after this iteration
       return false;
     }
 
@@ -43,15 +43,15 @@ export default class Retailer extends Customer implements CustomerScraper {
   }
 
   public async scrapQuotaAllocation() {
+    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
+
     const isPass = await this.handleBureaucracy();
 
     if (!isPass) {
       return null;
     }
 
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
-    return nationalityIdVerificationPage.getQuotaAllocation({
+    return nationalityIdVerificationPage.waitForQuotaAllocation({
       nationalityId: this.getNationalityId(),
       encryptedFamilyId: this.getEncryptedFamilyId(),
       selectedCustomerType: this.name,

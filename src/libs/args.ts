@@ -1,21 +1,17 @@
 import type { Browser, BrowserContextOptions, LaunchOptions, Page } from '@playwright/test';
 
 import Customer from '../models/customer.ts';
-import type { CustomerResponse } from '../schemas/customer-record.ts';
-import type { FlaggedNationalityId, Profile } from '../schemas/file.ts';
-import type { QuotaRecord } from '../schemas/quota-record.ts';
-import type { CustomerFlags, CustomerType } from './types.ts';
-
-export type LoginArgs = {
-  identifier: string;
-  pin: string;
-};
-
-export type GetQuotaAllocationArgs = {
-  nationalityId: string;
-  encryptedFamilyId?: string;
-  selectedCustomerType: CustomerType;
-};
+import type {
+  CustomerFlags,
+  CustomerResponse,
+  CustomerType,
+  FlaggedNationalityId,
+  FlaggedOrder,
+  Order,
+  Profile,
+  QuotaResponse,
+  TransactionResponse,
+} from './types.ts';
 
 export type CustomerArgs = {
   nationalityId: string;
@@ -39,15 +35,39 @@ export type CustomerResponseToCustomerArgs = {
   profile: Profile;
 };
 
-export type QuotaRecordToQuotaAllocationArgs = {
+export type QuotaResponseToQuotaAllocationArgs = {
+  quotaResponse: QuotaResponse;
   customerType: CustomerType;
-  quotaRecord: QuotaRecord;
+};
+
+export type TransactionResponseToTransactionArgs = {
+  transactionResponse: TransactionResponse;
+  order: Order;
+};
+
+export type WaitForCustomerArgs = {
+  nationalityId: string;
+  trigger: () => Promise<void>;
+};
+
+export type WaitForQuotaAllocationArgs = {
+  nationalityId: string;
+  encryptedFamilyId?: string;
+  selectedCustomerType: CustomerType;
+};
+
+export type LoginArgs = {
+  identifier: string;
+  pin: string;
 };
 
 export type ScrapQuotaAllocationArgs = {
   page: Page;
   customer: Customer;
   selectedCustomerType: CustomerType;
+  options?: {
+    redirect: boolean;
+  };
 };
 
 export type ScrapQuotaAllocationsArgs = {
@@ -58,6 +78,19 @@ export type ScrapQuotaAllocationsArgs = {
 export type ScrapQuotaArgs = {
   page: Page;
   flaggedNationalityId: FlaggedNationalityId;
+};
+
+export type CreateOrderArgs = {
+  page: Page;
+  flaggedOrder: FlaggedOrder;
+};
+
+export type ScrapQuotasActionArgs = {
+  file: string;
+};
+
+export type CreateOrdersActionArgs = {
+  file: string;
 };
 
 export type CreateBrowserArgs = {

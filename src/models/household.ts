@@ -29,15 +29,15 @@ export default class Household extends Customer implements CustomerScraper {
   }
 
   public async scrapQuotaAllocation() {
+    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
+
     const isPass = await this.handleBureaucracy();
 
     if (!isPass) {
       return null;
     }
 
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
-    return nationalityIdVerificationPage.getQuotaAllocation({
+    return nationalityIdVerificationPage.waitForQuotaAllocation({
       nationalityId: this.getNationalityId(),
       encryptedFamilyId: this.getEncryptedFamilyId(),
       selectedCustomerType: this.name,

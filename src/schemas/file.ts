@@ -1,8 +1,7 @@
 import z from 'zod';
 
-import { CUSTOMER_TYPES, NATIONALITY_ID_LENGTH } from '../libs/constants.ts';
+import { customerTypeSchema, nationalityIdSchema } from './customer-record.ts';
 
-export const nationalityIdSchema = z.string().length(NATIONALITY_ID_LENGTH);
 export const nationalityIdsSchema = z.array(nationalityIdSchema);
 export const flaggedNationalityIdSchema = z.object({
   nationalityId: nationalityIdSchema,
@@ -18,7 +17,7 @@ export const profileSchema = z.object({
 });
 
 export const quotaAllocationSchema = z.object({
-  type: z.enum(CUSTOMER_TYPES),
+  customerType: customerTypeSchema,
   quantity: z.number(),
 });
 export const quotaSchema = z.object({
@@ -27,7 +26,18 @@ export const quotaSchema = z.object({
 });
 export const quotasSchema = z.array(quotaSchema);
 
-export type FlaggedNationalityId = z.infer<typeof flaggedNationalityIdSchema>;
-export type Profile = z.infer<typeof profileSchema>;
-export type QuotaAllocation = z.infer<typeof quotaAllocationSchema>;
-export type Quota = z.infer<typeof quotaSchema>;
+export const orderSchema = z.object({
+  nationalityId: nationalityIdSchema,
+  customerType: customerTypeSchema,
+  quantity: z.number(),
+});
+export const ordersSchema = z.array(orderSchema);
+export const flaggedOrderSchema = orderSchema.extend({ flag: z.boolean() });
+export const flaggedOrdersSchema = z.array(flaggedOrderSchema);
+
+export const transactionSchema = z.object({
+  id: z.string(),
+  order: orderSchema,
+  allocation: quotaAllocationSchema,
+});
+export const transactionsSchema = z.array(transactionSchema);

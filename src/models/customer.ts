@@ -1,6 +1,5 @@
 import type { CustomerArgs } from '../libs/args.ts';
-import type { CustomerFlags, CustomerType } from '../libs/types.ts';
-import type { Profile } from '../schemas/file.ts';
+import type { CustomerFlags, CustomerType, Profile } from '../libs/types.ts';
 
 export default class Customer {
   private readonly nationalityId: string;
