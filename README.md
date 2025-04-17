@@ -69,6 +69,8 @@ After installation, you can use the lpgfy command followed by the desired subcom
   npm run dev -- scrap-quotas --file <path_to_file>
   ```
 
+  **Note**: This command expects a JSON file containing **Nationality IDs**.
+
 ### 📝 Order Management
 
 - **Create Orders**: Generate new orders based on the provided file.
@@ -77,15 +79,13 @@ After installation, you can use the lpgfy command followed by the desired subcom
   npm run dev -- create-orders --file <path_to_file>
   ```
 
-  **Note**: This command expects a JSON file containing **Nationality IDs**.
+  **Note**: This command expects a JSON file containing **Orders**.
 
 - **Generate Orders from Quotas**: Create orders directly from the quotas file.
 
   ```bash
   npm run dev generate-orders
   ```
-
-  **Note**: This command expects a JSON file containing **Orders**.
 
 ## 📦 Example Input and Output
 
