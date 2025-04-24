@@ -137,7 +137,7 @@ After installation, you can use the lpgfy command followed by the desired subcom
   - `allocations`: An array detailing the allocations, each containing:​
     - `customerType`: The type of customer.
     - `quantity`: The allocated quantity.
-    - `isValid`: Indicates whether the allocation is currently valid, based on factors such as the availability of quota associated with the customer's Kartu Keluarga (KK).
+    - `isValid`: Indicates whether the allocation is currently valid, based on factors such as the availability of quota associated with the customer's Family Card.
 
 - **Transactions**: An object representing a transaction record.​
 

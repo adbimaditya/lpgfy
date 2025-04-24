@@ -37,6 +37,30 @@ export default class SalePage {
     await this.page.getByRole('button', { name: 'Proses Transaksi' }).click();
   }
 
+  public async isFamilyQuotaExceed() {
+    return this.page
+      .getByText(
+        'Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg bulan ini untuk NIK yang terdaftar pada nomor KK yang sama.',
+      )
+      .isVisible();
+  }
+
+  public async isMerchantQuotaExceed() {
+    return this.page.getByTestId('btnSeeManageProduct').isVisible();
+  }
+
+  public async getMerchantQuota() {
+    return Number(
+      (
+        (await this.page
+          .locator(
+            'form > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > p:nth-child(2) > b',
+          )
+          .textContent()) as string
+      ).trim(),
+    );
+  }
+
   public async waitForTransaction(order: Order) {
     const responsePromise = this.page.waitForResponse(
       (response) =>

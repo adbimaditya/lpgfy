@@ -9,6 +9,7 @@ import type {
   FlaggedOrder,
   Order,
   Profile,
+  Quota,
   QuotaResponse,
   TransactionResponse,
 } from './types.ts';
@@ -88,12 +89,21 @@ export type CreateOrderArgs = {
   flaggedOrder: FlaggedOrder;
 };
 
+export type GenerateOrdersFromQuotasArgs = {
+  quotas: Quota[];
+  quantity: number;
+};
+
 export type ScrapQuotasActionArgs = {
   file: string;
 };
 
 export type CreateOrdersActionArgs = {
   file: string;
+};
+
+export type GenerateOrdersFromQuotasActionArgs = {
+  quantity: number;
 };
 
 export type CreateBrowserArgs = {

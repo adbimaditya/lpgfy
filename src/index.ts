@@ -1,12 +1,14 @@
 import { Command } from 'commander';
 
 import {
+  clearDataAction,
   createOrdersAction,
   generateOrdersFromQuotasAction,
   loginAction,
   logoutAction,
   scrapQuotasAction,
 } from './libs/command.ts';
+import { parseInteger } from './libs/utils.ts';
 
 const program = new Command();
 
@@ -37,7 +39,12 @@ program
   .action(createOrdersAction);
 program
   .command('generate-orders')
+  .option('-q, --quantity <number>', 'quantity for all orders', parseInteger, 5)
   .description('Generate orders from the quotas file.')
   .action(generateOrdersFromQuotasAction);
+program
+  .command('clear-data')
+  .description('Delete all existing data from the system.')
+  .action(clearDataAction);
 
 await program.parseAsync(process.argv);

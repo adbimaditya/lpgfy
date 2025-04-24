@@ -1,4 +1,5 @@
 import asyncRetry, { type RetryFunction } from 'async-retry';
+import { InvalidOptionArgumentError } from 'commander';
 
 import { MY_LUCKY_NUMBER } from './constants.ts';
 import logger from './logger.ts';
@@ -33,4 +34,12 @@ export function isFirstIteration(index: number) {
 
 export function encodeCustomerType(customerType: CustomerType) {
   return customerType.replace(' ', '+');
+}
+
+export function parseInteger(value: string) {
+  const parsedValue = parseInt(value, 10);
+  if (Number.isNaN(parsedValue)) {
+    throw new InvalidOptionArgumentError('Not a number.');
+  }
+  return parsedValue;
 }

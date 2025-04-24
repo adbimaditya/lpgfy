@@ -17,7 +17,7 @@ export default class Retailer extends Customer implements CustomerScraper {
     this.page = page;
   }
 
-  public hasSimilarRegisterLocation() {
+  private hasSimilarRegisterLocation() {
     const types = this.getTypes();
     const baseProfile = this.getBaseProfile();
     const retailer = types.find((type) => type.name === 'Pengecer');

@@ -4,9 +4,19 @@ import path from 'path';
 
 import { identifierSchema, pinSchema } from '../schemas/auth.ts';
 import { quotasSchema } from '../schemas/file.ts';
-import type { CreateOrdersActionArgs, ScrapQuotasActionArgs } from './args.ts';
-import { ORDERS_FILE_PATH, QUOTAS_FILE_PATH } from './constants.ts';
+import type {
+  CreateOrdersActionArgs,
+  GenerateOrdersFromQuotasActionArgs,
+  ScrapQuotasActionArgs,
+} from './args.ts';
 import {
+  FLAGGED_NATIONALITY_IDS_FILE_PATH,
+  FLAGGED_ORDERS_FILE_PATH,
+  ORDERS_FILE_PATH,
+  QUOTAS_FILE_PATH,
+} from './constants.ts';
+import {
+  deleteFileAsync,
   ensureFlaggedNationalityIdsFileExists,
   ensureFlaggedOrdersFileExists,
   readFileAsync,
@@ -133,7 +143,9 @@ export async function createOrdersAction({ file }: CreateOrdersActionArgs) {
   spinner.succeed('Orders creation completed successfully.');
 }
 
-export async function generateOrdersFromQuotasAction() {
+export async function generateOrdersFromQuotasAction({
+  quantity,
+}: GenerateOrdersFromQuotasActionArgs) {
   const spinner = ora('Generating orders...').start();
 
   const { data: quotasFile, error: readError } = await tryCatch(readFileAsync(QUOTAS_FILE_PATH));
@@ -147,7 +159,16 @@ export async function generateOrdersFromQuotasAction() {
 
   const quotas = quotasSchema.parse(quotasFile);
 
-  await writeFileAsync(ORDERS_FILE_PATH, generateOrdersFromQuotas(quotas));
+  await writeFileAsync(ORDERS_FILE_PATH, generateOrdersFromQuotas({ quotas, quantity }));
 
   spinner.succeed('Generate orders completed successfully.');
+}
+
+export async function clearDataAction() {
+  const spinner = ora('Clearing data...').start();
+
+  await deleteFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH);
+  await deleteFileAsync(FLAGGED_ORDERS_FILE_PATH);
+
+  spinner.succeed('Clear data completed successfully.');
 }

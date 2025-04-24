@@ -3,6 +3,7 @@ import NationalityIdVerificationPage from '../pages/nationality-id-verification-
 import SalePage from '../pages/sale-page.ts';
 import type {
   CreateOrderArgs,
+  GenerateOrdersFromQuotasArgs,
   LoginArgs,
   ScrapQuotaAllocationArgs,
   ScrapQuotaAllocationsArgs,
@@ -20,7 +21,7 @@ import {
   updateTransactionsFile,
   writeFileAsync,
 } from './file.ts';
-import type { FlaggedNationalityId, FlaggedOrder, Order, Quota } from './types.ts';
+import type { FlaggedNationalityId, FlaggedOrder, Order } from './types.ts';
 import { isEmpty, isFirstIteration, tryCatch } from './utils.ts';
 
 export async function getIsAuthenticated() {
@@ -249,9 +250,11 @@ export async function createOrder({
   }
 
   if (
-    !quotaAllocation.isValid ||
-    quotaAllocation.quantity === 0 ||
-    quantity > quotaAllocation.quantity
+    (await salePage.isFamilyQuotaExceed()) ||
+    (await salePage.isMerchantQuotaExceed()) ||
+    quantity > (await salePage.getMerchantQuota()) ||
+    quantity > quotaAllocation.quantity ||
+    quantity > 5
   ) {
     await nationalityIdVerificationPage.goto();
     await nationalityIdVerificationPage.waitForTimeout();
@@ -295,7 +298,7 @@ export async function createOrders(flaggedOrders: FlaggedOrder[]) {
   });
 }
 
-export function generateOrdersFromQuotas(quotas: Quota[]) {
+export function generateOrdersFromQuotas({ quotas, quantity }: GenerateOrdersFromQuotasArgs) {
   const orders: Order[] = [];
 
   for (const quota of quotas) {
@@ -303,7 +306,7 @@ export function generateOrdersFromQuotas(quotas: Quota[]) {
       const order: Order = {
         nationalityId: quota.nationalityId,
         customerType: allocation.customerType,
-        quantity: allocation.quantity > 5 ? 5 : allocation.quantity,
+        quantity: allocation.quantity >= quantity ? quantity : allocation.quantity,
       };
 
       if (allocation.isValid && order.quantity > 0) {
