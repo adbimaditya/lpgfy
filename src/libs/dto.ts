@@ -32,6 +32,7 @@ export function customerResponseToCustomer({
     customerTypes: data.customerTypes.map((customerType) => ({
       name: customerType.name as CustomerType,
       mid: customerType.merchant ? customerType.merchant.mid : null,
+      isQuotaValid: customerType.isQuotaValid,
     })),
     customerFlags: {
       isAgreedTermsConditions: data.isAgreedTermsConditions,
@@ -53,10 +54,12 @@ export function customerResponseToCustomer({
 export function quotaResponseToQuotaAllocation({
   quotaResponse: { data },
   customerType,
+  isValid,
 }: QuotaResponseToQuotaAllocationArgs): QuotaAllocation {
   return {
     customerType,
     quantity: data.quotaRemaining.daily,
+    isValid,
   };
 }
 

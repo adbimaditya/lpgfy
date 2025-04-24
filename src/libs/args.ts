@@ -19,6 +19,7 @@ export type CustomerArgs = {
   customerTypes: {
     name: CustomerType;
     mid: string | null;
+    isQuotaValid: boolean;
   }[];
   customerFlags: CustomerFlags;
   profile: Profile;
@@ -38,6 +39,7 @@ export type CustomerResponseToCustomerArgs = {
 export type QuotaResponseToQuotaAllocationArgs = {
   quotaResponse: QuotaResponse;
   customerType: CustomerType;
+  isValid: boolean;
 };
 
 export type TransactionResponseToTransactionArgs = {
@@ -54,6 +56,7 @@ export type WaitForQuotaAllocationArgs = {
   nationalityId: string;
   encryptedFamilyId?: string;
   selectedCustomerType: CustomerType;
+  isValid: boolean;
 };
 
 export type LoginArgs = {

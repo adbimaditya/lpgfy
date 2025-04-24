@@ -55,6 +55,7 @@ export default class Retailer extends Customer implements CustomerScraper {
       nationalityId: this.getNationalityId(),
       encryptedFamilyId: this.getEncryptedFamilyId(),
       selectedCustomerType: this.name,
+      isValid: this.hasValidQuotaForSelectedCustomerType(this.name),
     });
   }
 }

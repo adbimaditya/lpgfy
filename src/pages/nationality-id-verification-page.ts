@@ -133,6 +133,7 @@ export default class NationalityIdVerificationPage {
     nationalityId,
     encryptedFamilyId,
     selectedCustomerType,
+    isValid,
   }: WaitForQuotaAllocationArgs) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
@@ -147,6 +148,7 @@ export default class NationalityIdVerificationPage {
     const quotaAllocation = quotaResponseToQuotaAllocation({
       quotaResponse,
       customerType: selectedCustomerType,
+      isValid,
     });
 
     return quotaAllocation;

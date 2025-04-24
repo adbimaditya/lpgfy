@@ -41,6 +41,7 @@ export default class Household extends Customer implements CustomerScraper {
       nationalityId: this.getNationalityId(),
       encryptedFamilyId: this.getEncryptedFamilyId(),
       selectedCustomerType: this.name,
+      isValid: this.hasValidQuotaForSelectedCustomerType(this.name),
     });
   }
 }

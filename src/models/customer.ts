@@ -7,6 +7,7 @@ export default class Customer {
   private readonly types: {
     name: CustomerType;
     mid: string | null;
+    isQuotaValid: boolean;
   }[];
   private readonly flags: CustomerFlags;
   private readonly baseProfile: Profile;
@@ -51,5 +52,11 @@ export default class Customer {
 
   public hasMultipleTypes() {
     return this.types.length >= 2;
+  }
+
+  public hasValidQuotaForSelectedCustomerType(customerType: CustomerType) {
+    const selectedCustomerType = this.types.find((type) => type.name === customerType);
+
+    return !!selectedCustomerType && selectedCustomerType.isQuotaValid;
   }
 }

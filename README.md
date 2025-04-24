@@ -118,11 +118,6 @@ After installation, you can use the lpgfy command followed by the desired subcom
 
 - **Quotas**: An object representing the allocated LPG quotas for a customer.​
 
-  - `nationalityId`: The customer's unique identifier.​
-  - `allocations`: An array detailing the allocations, each containing:​
-    - `customerType`: The type of customer.
-    - `quantity`: The allocated quantity.
-
   ```json
   [
     {
@@ -130,21 +125,21 @@ After installation, you can use the lpgfy command followed by the desired subcom
       "allocations": [
         {
           "customerType": "Usaha Mikro",
-          "quantity": 1
+          "quantity": 1,
+          "isValid:": true
         }
       ]
     }
   ]
   ```
 
-- **Transactions**: An object representing a transaction record.​
-
-  - `id`: The unique identifier for the transaction.​
-  - `order`: Details of the order placed, including:​
-    - `nationalityId`: The customer's unique identifier.
+  - `nationalityId`: The customer's unique identifier.​
+  - `allocations`: An array detailing the allocations, each containing:​
     - `customerType`: The type of customer.
-    - `quantity`: The quantity ordered.
-  - `allocation`: The remaining quota available for a specific `customerType`.
+    - `quantity`: The allocated quantity.
+    - `isValid`: Indicates whether the allocation is currently valid, based on factors such as the availability of quota associated with the customer's Kartu Keluarga (KK).
+
+- **Transactions**: An object representing a transaction record.​
 
   ```json
   [
@@ -163,12 +158,19 @@ After installation, you can use the lpgfy command followed by the desired subcom
   ]
   ```
 
+  - `id`: The unique identifier for the transaction.​
+  - `order`: Details of the order placed, including:​
+    - `nationalityId`: The customer's unique identifier.
+    - `customerType`: The type of customer.
+    - `quantity`: The quantity ordered.
+  - `allocation`: The remaining quota available for a specific `customerType`.
+
 #### 🧾 Customer Type Values
 
 The `customerType` field accepts the following values:​
 
-- **Rumah Tangga**: Household consumers using LPG 3 kg for domestic purposes.
-- **Usaha Mikro**: Micro-businesses utilizing LPG 3 kg for their operations.
-- **Pengecer**: Registered retailers authorized to distribute LPG 3 kg.​
+- `Rumah Tangga`: Household consumers using LPG 3 kg for domestic purposes.
+- `Usaha Mikro`: Micro-businesses utilizing LPG 3 kg for their operations.
+- `Pengecer`: Registered retailers authorized to distribute LPG 3 kg.​
 
 Ensure that the `customerType` in your data matches one of these values to maintain data integrity and compliance with subsidy distribution regulations.

@@ -248,7 +248,11 @@ export async function createOrder({
     return;
   }
 
-  if (quotaAllocation.quantity === 0 || quantity > quotaAllocation.quantity) {
+  if (
+    !quotaAllocation.isValid ||
+    quotaAllocation.quantity === 0 ||
+    quantity > quotaAllocation.quantity
+  ) {
     await nationalityIdVerificationPage.goto();
     await nationalityIdVerificationPage.waitForTimeout();
     return;
@@ -302,7 +306,7 @@ export function generateOrdersFromQuotas(quotas: Quota[]) {
         quantity: allocation.quantity > 5 ? 5 : allocation.quantity,
       };
 
-      if (order.quantity > 0) {
+      if (allocation.isValid && order.quantity > 0) {
         orders.push(order);
       }
     }
