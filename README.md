@@ -84,8 +84,10 @@ After installation, you can use the lpgfy command followed by the desired subcom
 - **Generate Orders from Quotas**: Create orders directly from the quotas file.
 
   ```bash
-  npm run dev generate-orders
+  npm run dev -- generate-orders --quantity <number>
   ```
+
+  **Note**: This command accepts an optional `--quantity` (`-q`) option to specify the number of orders to generate per quota. If not provided, it defaults to 5.
 
 ## 📦 Example Input and Output
 
@@ -116,28 +118,23 @@ After installation, you can use the lpgfy command followed by the desired subcom
 
 ### Output
 
-- **Quotas**: An object representing the allocated LPG quotas for a customer.​
+- **Quotas**: An object representing the LPG quotas for a customer.​
 
   ```json
   [
     {
       "nationalityId": "32xxxxxxxxxxxxx1",
-      "allocations": [
-        {
-          "customerType": "Usaha Mikro",
-          "quantity": 1,
-          "isValid:": true
-        }
-      ]
+      "customerType": "Usaha Mikro",
+      "quantity": 1,
+      "isValid:": true
     }
   ]
   ```
 
   - `nationalityId`: The customer's unique identifier.​
-  - `allocations`: An array detailing the allocations, each containing:​
-    - `customerType`: The type of customer.
-    - `quantity`: The allocated quantity.
-    - `isValid`: Indicates whether the allocation is currently valid, based on factors such as the availability of quota associated with the customer's Family Card.
+  - `customerType`: The type of customer.
+  - `quantity`: The remaining quota available.
+  - `isValid`: Indicates whether the quota is currently valid, based on factors such as the availability of quota associated with the customer's Family Card.
 
 - **Transactions**: An object representing a transaction record.​
 
@@ -145,13 +142,12 @@ After installation, you can use the lpgfy command followed by the desired subcom
   [
     {
       "id": "e1axxxxx-3fxx-xx46-bxxx-69edac7xxxxx",
+      "nationalityId": "32xxxxxxxxxxxxx2",
+      "customerType": "Pengecer",
       "order": {
-        "nationalityId": "32xxxxxxxxxxxxx2",
-        "customerType": "Pengecer",
         "quantity": 1
       },
-      "allocation": {
-        "customerType": "Pengecer",
+      "quota": {
         "quantity": 0
       }
     }
@@ -159,11 +155,12 @@ After installation, you can use the lpgfy command followed by the desired subcom
   ```
 
   - `id`: The unique identifier for the transaction.​
-  - `order`: Details of the order placed, including:​
-    - `nationalityId`: The customer's unique identifier.
-    - `customerType`: The type of customer.
+  - `nationalityId`: The customer's unique identifier.
+  - `customerType`: The type of customer.
+  - `order`
     - `quantity`: The quantity ordered.
-  - `allocation`: The remaining quota available for a specific `customerType`.
+  - `quota`
+    - `quantity`: The remaining quota available.
 
 #### 🧾 Customer Type Values
 
