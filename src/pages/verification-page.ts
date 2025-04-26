@@ -1,29 +1,17 @@
 import type { Page } from '@playwright/test';
-import status from 'http-status';
 
-import type { WaitForCustomerArgs, WaitForQuotaAllocationArgs } from '../libs/args.ts';
 import {
   AUTH_FILE_PATH,
-  NATIONALITY_ID_VERIFICATION_DELAY,
-  NATIONALITY_ID_VERIFICATION_ENDPOINT,
-  NATIONALITY_ID_VERIFICATION_URL,
   PROFILE_ENDPOINT,
   QUOTA_ENDPOINT,
+  VERIFICATION_DELAY,
+  VERIFICATION_ENDPOINT,
+  VERIFICATION_URL,
 } from '../libs/constants.ts';
-import {
-  customerResponseToCustomer,
-  profileRecordToProfile,
-  quotaResponseToQuotaAllocation,
-} from '../libs/dto.ts';
-import { getProfileFromFile } from '../libs/file.ts';
 import { encodeCustomerType } from '../libs/utils.ts';
-import { customerResponseSchema } from '../schemas/customer-record.ts';
-import { profileResponseSchema } from '../schemas/profile-record.ts';
-import { quotaResponseSchema } from '../schemas/quota-record.ts';
+import type { WaitForCustomerResponseArgs, WaitForQuotaResponse } from '../types/page.ts';
 
-export default class NationalityIdVerificationPage {
-  private readonly url: string = NATIONALITY_ID_VERIFICATION_URL;
-  private readonly timeout: number = NATIONALITY_ID_VERIFICATION_DELAY;
+export default class VerificationPage {
   private readonly page: Page;
 
   constructor(page: Page) {
@@ -31,11 +19,15 @@ export default class NationalityIdVerificationPage {
   }
 
   public async goto(options?: Parameters<typeof this.page.goto>[1]) {
-    await this.page.goto(this.url, options);
+    await this.page.goto(VERIFICATION_URL, options);
+  }
+
+  public async reload() {
+    await this.page.reload();
   }
 
   public async waitForTimeout() {
-    await this.page.waitForTimeout(NATIONALITY_ID_VERIFICATION_DELAY);
+    await this.page.waitForTimeout(VERIFICATION_DELAY);
   }
 
   public async saveAuth() {
@@ -84,57 +76,32 @@ export default class NationalityIdVerificationPage {
     await this.page.getByTestId(/^btnClose.*/).click();
   }
 
-  public async waitForProfile() {
+  public async waitForProfileResponse() {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' && response.request().url() === PROFILE_ENDPOINT,
     );
 
-    const response = await responsePromise;
-    const apiResponse = await response.json();
-    const profileResponse = profileResponseSchema.parse(apiResponse);
-    const profile = profileRecordToProfile(profileResponse);
-
-    return profile;
+    return responsePromise;
   }
 
-  public async waitForCustomer({ nationalityId, trigger }: WaitForCustomerArgs) {
+  public async waitForCustomerResponse({ nationalityId, trigger }: WaitForCustomerResponseArgs) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
-        response.request().url() ===
-          `${NATIONALITY_ID_VERIFICATION_ENDPOINT}?nationalityId=${nationalityId}`,
+        response.request().url() === `${VERIFICATION_ENDPOINT}?nationalityId=${nationalityId}`,
     );
 
     await trigger();
 
-    const response = await responsePromise;
-
-    if (!response.ok()) {
-      if (response.status() === status.NOT_FOUND) {
-        await this.closeCustomerTypeSelectionDialog();
-      }
-
-      return null;
-    }
-
-    const profile = await getProfileFromFile();
-    const apiResponse = await response.json();
-    const customerResponse = customerResponseSchema.parse(apiResponse);
-    const customer = customerResponseToCustomer({
-      customerResponse: { ...customerResponse, data: { ...customerResponse.data, nationalityId } },
-      profile,
-    });
-
-    return customer;
+    return responsePromise;
   }
 
-  public async waitForQuotaAllocation({
+  public async waitForQuotaResponse({
     nationalityId,
     encryptedFamilyId,
     selectedCustomerType,
-    isValid,
-  }: WaitForQuotaAllocationArgs) {
+  }: WaitForQuotaResponse) {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
@@ -142,15 +109,6 @@ export default class NationalityIdVerificationPage {
           `${QUOTA_ENDPOINT(nationalityId)}?familyId=${encryptedFamilyId ? encodeURIComponent(encryptedFamilyId) : ''}&customerType=${encodeCustomerType(selectedCustomerType)}`,
     );
 
-    const response = await responsePromise;
-    const apiResponse = await response.json();
-    const quotaResponse = quotaResponseSchema.parse(apiResponse);
-    const quotaAllocation = quotaResponseToQuotaAllocation({
-      quotaResponse,
-      customerType: selectedCustomerType,
-      isValid,
-    });
-
-    return quotaAllocation;
+    return responsePromise;
   }
 }

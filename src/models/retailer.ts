@@ -1,20 +1,16 @@
-import type { Page } from '@playwright/test';
-
-import type { CustomerArgs } from '../libs/args.ts';
 import type { CustomerScraper } from '../libs/interfaces.ts';
-import type { CustomerType } from '../libs/types.ts';
-import NationalityIdVerificationPage from '../pages/nationality-id-verification-page.ts';
+import VerificationPage from '../pages/verification-page.ts';
+import type { CustomerScrapperConstructorArgs } from '../types/constructor.ts';
 import Customer from './customer.ts';
 
 export default class Retailer extends Customer implements CustomerScraper {
-  private readonly name: CustomerType = 'Pengecer';
   private readonly selectionLabel: string = 'Sub Pangkalan';
-  private readonly page: Page;
+  private readonly verificationPage: VerificationPage;
 
-  constructor(page: Page, args: CustomerArgs) {
+  constructor({ page, ...args }: CustomerScrapperConstructorArgs) {
     super(args);
 
-    this.page = page;
+    this.verificationPage = new VerificationPage(page);
   }
 
   private hasSimilarRegisterLocation() {
@@ -22,40 +18,21 @@ export default class Retailer extends Customer implements CustomerScraper {
     const baseProfile = this.getBaseProfile();
     const retailer = types.find((type) => type.name === 'Pengecer');
 
-    return Boolean(retailer && retailer.mid === baseProfile.mid);
+    return !!retailer && retailer.mid === baseProfile.mid;
   }
 
-  private async handleBureaucracy() {
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
+  public async handleBureaucracy() {
     if (this.hasMultipleTypes()) {
-      await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
-      await nationalityIdVerificationPage.continueTransaction();
+      await this.verificationPage.selectCustomerType(this.selectionLabel);
+      await this.verificationPage.continueTransaction();
     }
 
     if (!this.hasSimilarRegisterLocation()) {
-      await nationalityIdVerificationPage.closeRetailerLocationDialog();
-      await this.page.reload(); // * Fix strange behavior when waiting for response after this iteration
+      await this.verificationPage.closeRetailerLocationDialog();
+      await this.verificationPage.reload(); // * Fix strange behavior when waiting for response after this iteration
       return false;
     }
 
     return true;
-  }
-
-  public async scrapQuotaAllocation() {
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
-    const isPass = await this.handleBureaucracy();
-
-    if (!isPass) {
-      return null;
-    }
-
-    return nationalityIdVerificationPage.waitForQuotaAllocation({
-      nationalityId: this.getNationalityId(),
-      encryptedFamilyId: this.getEncryptedFamilyId(),
-      selectedCustomerType: this.name,
-      isValid: this.hasValidQuotaForSelectedCustomerType(this.name),
-    });
   }
 }

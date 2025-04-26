@@ -3,7 +3,6 @@ import type { Page } from '@playwright/test';
 import { LOGIN_URL } from '../libs/constants.ts';
 
 export default class LoginPage {
-  private readonly url: string = LOGIN_URL;
   private readonly page: Page;
 
   constructor(page: Page) {
@@ -11,7 +10,7 @@ export default class LoginPage {
   }
 
   public async goto(options?: Parameters<typeof this.page.goto>[1]) {
-    await this.page.goto(this.url, options);
+    await this.page.goto(LOGIN_URL, options);
   }
 
   public async fillIdentifierInput(phoneNumber: string) {

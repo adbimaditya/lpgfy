@@ -1,14 +1,14 @@
 import asyncRetry, { type RetryFunction } from 'async-retry';
 import { InvalidOptionArgumentError } from 'commander';
 
+import type { Result } from '../types/lib.ts';
+import type { CustomerType } from '../types/model.ts';
 import { MY_LUCKY_NUMBER } from './constants.ts';
 import logger from './logger.ts';
-import type { CustomerType, Result } from './types.ts';
 
 export async function tryCatch<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
   try {
     const data = await promise;
-
     return { data, error: null };
   } catch (error) {
     return { data: null, error: error as E };
@@ -29,7 +29,7 @@ export function isEmpty(data: unknown[]) {
 }
 
 export function isFirstIteration(index: number) {
-  return Boolean(index === 0);
+  return index === 0;
 }
 
 export function encodeCustomerType(customerType: CustomerType) {
@@ -41,5 +41,6 @@ export function parseInteger(value: string) {
   if (Number.isNaN(parsedValue)) {
     throw new InvalidOptionArgumentError('Not a number.');
   }
+
   return parsedValue;
 }

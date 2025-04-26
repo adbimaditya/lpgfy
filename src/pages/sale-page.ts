@@ -1,24 +1,13 @@
 import type { Page } from '@playwright/test';
 
-import { SALE_URL, TRANSACTION_ENDPOINT } from '../libs/constants.ts';
-import { transactionResponseToTransaction } from '../libs/dto.ts';
-import type { Order } from '../libs/types.ts';
-import { transactionResponseSchema } from '../schemas/transaction-record.ts';
+import { TRANSACTION_ENDPOINT } from '../libs/constants.ts';
+import { tryCatch } from '../libs/utils.ts';
 
 export default class SalePage {
-  private readonly url: string = SALE_URL;
   private readonly page: Page;
 
   constructor(page: Page) {
     this.page = page;
-  }
-
-  public async waitForOrderURL() {
-    await this.page.waitForURL('**/sale?orderPage=true');
-  }
-
-  public async waitForStructURL() {
-    await this.page.waitForURL('**/sale/struk?transactionId=**');
   }
 
   public async changeCustomer() {
@@ -38,41 +27,42 @@ export default class SalePage {
   }
 
   public async isFamilyQuotaExceed() {
-    return this.page
-      .getByText(
-        'Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg bulan ini untuk NIK yang terdaftar pada nomor KK yang sama.',
-      )
-      .isVisible();
+    const { error } = await tryCatch(
+      this.page.waitForSelector(
+        'text=Tidak dapat transaksi karena telah melebihi batas kewajaran pembelian LPG 3 kg bulan ini untuk NIK yang terdaftar pada nomor KK yang sama.',
+        { state: 'attached', timeout: 500 },
+      ),
+    );
+    return error === null;
   }
 
   public async isMerchantQuotaExceed() {
-    return this.page.getByTestId('btnSeeManageProduct').isVisible();
+    const { error } = await tryCatch(
+      this.page.waitForSelector('[data-testid="btnSeeManageProduct"]', {
+        state: 'attached',
+        timeout: 500,
+      }),
+    );
+    return error === null;
   }
 
   public async getMerchantQuota() {
     return Number(
       (
         (await this.page
-          .locator(
-            'form > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > p:nth-child(2) > b',
-          )
+          .locator('form > div:nth-child(2) > div:nth-child(1) > div > p:nth-child(3) > b')
           .textContent()) as string
       ).trim(),
     );
   }
 
-  public async waitForTransaction(order: Order) {
+  public async waitForTransactionResponse() {
     const responsePromise = this.page.waitForResponse(
       (response) =>
         response.request().method() === 'GET' &&
         response.request().url().startsWith(TRANSACTION_ENDPOINT),
     );
 
-    const response = await responsePromise;
-    const apiResponse = await response.json();
-    const transactionResponse = transactionResponseSchema.parse(apiResponse);
-    const transaction = transactionResponseToTransaction({ transactionResponse, order });
-
-    return transaction;
+    return responsePromise;
   }
 }

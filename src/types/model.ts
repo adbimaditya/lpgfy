@@ -1,12 +1,18 @@
 import { z } from 'zod';
 
+import {
+  CHANNEL_INJECTS,
+  CUSTOMER_TYPES,
+  PAYMENT_TYPES,
+  PRODUCT_TYPES,
+  STATUS,
+} from '../libs/constants.ts';
 import { customerRecordSchema, customerResponseSchema } from '../schemas/customer-record.ts';
 import {
   flaggedNationalityIdSchema,
   flaggedOrderSchema,
   orderSchema,
   profileSchema,
-  quotaAllocationSchema,
   quotaSchema,
   transactionSchema,
 } from '../schemas/file.ts';
@@ -17,25 +23,6 @@ import {
   transactionRecordSchema,
   transactionResponseSchema,
 } from '../schemas/transaction-record.ts';
-import {
-  CHANNEL_INJECTS,
-  CUSTOMER_TYPES,
-  PAYMENT_TYPES,
-  PRODUCT_TYPES,
-  STATUS,
-} from './constants.ts';
-
-export type Success<T> = {
-  data: T;
-  error: null;
-};
-
-export type Failure<E> = {
-  data: null;
-  error: E;
-};
-
-export type Result<T, E = Error> = Success<T> | Failure<E>;
 
 export type CustomerType = (typeof CUSTOMER_TYPES)[number];
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
@@ -53,8 +40,13 @@ export type CustomerFlags = {
   isBusinessName: boolean;
 };
 
+export type CustomerTypeDetails = {
+  name: CustomerType;
+  mid: string | null;
+  isQuotaValid: boolean;
+};
+
 export type Profile = z.infer<typeof profileSchema>;
-export type QuotaAllocation = z.infer<typeof quotaAllocationSchema>;
 export type Quota = z.infer<typeof quotaSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type Transaction = z.infer<typeof transactionSchema>;

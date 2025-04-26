@@ -42,6 +42,7 @@ export default [
       'import/extensions': 'off',
       'no-await-in-loop': 'off',
       'no-restricted-syntax': 'off',
+      'dot-notation': 'off',
     },
     settings: {
       'import/resolver': {

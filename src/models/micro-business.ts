@@ -1,68 +1,43 @@
-import type { Page } from '@playwright/test';
-
-import type { CustomerArgs } from '../libs/args.ts';
 import type { CustomerScraper } from '../libs/interfaces.ts';
-import type { CustomerType } from '../libs/types.ts';
-import NationalityIdVerificationPage from '../pages/nationality-id-verification-page.ts';
+import VerificationPage from '../pages/verification-page.ts';
+import type { CustomerScrapperConstructorArgs } from '../types/constructor.ts';
 import Customer from './customer.ts';
 
 export default class MicroBusiness extends Customer implements CustomerScraper {
-  private readonly name: CustomerType = 'Usaha Mikro';
   private readonly selectionLabel: string = 'Usaha Mikro';
-  private readonly page: Page;
+  private readonly verificationPage: VerificationPage;
 
-  constructor(page: Page, args: CustomerArgs) {
+  constructor({ page, ...args }: CustomerScrapperConstructorArgs) {
     super(args);
 
-    this.page = page;
+    this.verificationPage = new VerificationPage(page);
   }
 
-  private isEligible(): boolean {
+  private isEligible() {
     const flags = this.getFlags();
-
     return flags.isBusinessType && flags.isBusinessName;
   }
 
   private hasRecommendationLetter() {
     const flags = this.getFlags();
-
     return flags.isRecommendationLetter;
   }
 
-  private async handleBureaucracy() {
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
+  public async handleBureaucracy() {
     if (this.hasMultipleTypes()) {
-      await nationalityIdVerificationPage.selectCustomerType(this.selectionLabel);
-      await nationalityIdVerificationPage.continueTransaction();
+      await this.verificationPage.selectCustomerType(this.selectionLabel);
+      await this.verificationPage.continueTransaction();
     }
 
     if (!this.isEligible() && !this.hasRecommendationLetter()) {
-      await nationalityIdVerificationPage.closeUpdateMicroBusinessDataDialog();
+      await this.verificationPage.closeUpdateMicroBusinessDataDialog();
       return false;
     }
 
     if (!this.hasRecommendationLetter()) {
-      await nationalityIdVerificationPage.continueTransactionForDelayedUpdate();
+      await this.verificationPage.continueTransactionForDelayedUpdate();
     }
 
     return true;
-  }
-
-  public async scrapQuotaAllocation() {
-    const nationalityIdVerificationPage = new NationalityIdVerificationPage(this.page);
-
-    const isPass = await this.handleBureaucracy();
-
-    if (!isPass) {
-      return null;
-    }
-
-    return nationalityIdVerificationPage.waitForQuotaAllocation({
-      nationalityId: this.getNationalityId(),
-      encryptedFamilyId: this.getEncryptedFamilyId(),
-      selectedCustomerType: this.name,
-      isValid: this.hasValidQuotaForSelectedCustomerType(this.name),
-    });
   }
 }

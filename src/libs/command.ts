@@ -4,11 +4,12 @@ import path from 'path';
 
 import { identifierSchema, pinSchema } from '../schemas/auth.ts';
 import { quotasSchema } from '../schemas/file.ts';
+import OrderCreationService from '../services/order-service.ts';
 import type {
   CreateOrdersActionArgs,
   GenerateOrdersFromQuotasActionArgs,
   ScrapQuotasActionArgs,
-} from './args.ts';
+} from '../types/lib.ts';
 import {
   FLAGGED_NATIONALITY_IDS_FILE_PATH,
   FLAGGED_ORDERS_FILE_PATH,
@@ -22,21 +23,13 @@ import {
   readFileAsync,
   writeFileAsync,
 } from './file.ts';
-import {
-  createOrders,
-  generateOrdersFromQuotas,
-  getIsAuthenticated,
-  login,
-  logout,
-  scrapQuotas,
-} from './my-pertamina.ts';
+import { createOrders, getIsAuthenticated, login, logout, scrapQuotas } from './my-pertamina.ts';
 import { retry, tryCatch } from './utils.ts';
 
 export async function loginAction() {
   const spinner = ora('Logging in...');
 
   const isAuthenticated = await getIsAuthenticated();
-
   if (isAuthenticated) {
     spinner.info('You are already logged in.');
     return;
@@ -47,7 +40,6 @@ export async function loginAction() {
     required: true,
     validate: (value) => {
       const { success } = identifierSchema.safeParse(value);
-
       if (!success) {
         return 'Invalid identifier. Please enter a valid email address or a phone number with 10 to 13 digits.';
       }
@@ -60,7 +52,6 @@ export async function loginAction() {
     message: 'Enter your 6-digit PIN:',
     validate: (value) => {
       const { success } = pinSchema.safeParse(value);
-
       if (!success) {
         return 'Invalid PIN. Please enter exactly 6 digits.';
       }
@@ -78,7 +69,6 @@ export async function logoutAction() {
   const spinner = ora('Logging out...');
 
   const isAuthenticated = await getIsAuthenticated();
-
   if (!isAuthenticated) {
     spinner.info('You are not logged in.');
     return;
@@ -93,7 +83,6 @@ export async function scrapQuotasAction({ file }: ScrapQuotasActionArgs) {
   const spinner = ora('Scraping quotas...');
 
   const isAuthenticated = await getIsAuthenticated();
-
   if (!isAuthenticated) {
     ora().info(
       'You must be logged in to perform this task. Please use the login command to authenticate.',
@@ -103,7 +92,6 @@ export async function scrapQuotasAction({ file }: ScrapQuotasActionArgs) {
 
   const nationalityIdFilePath = path.resolve(file);
   const flaggedNationalityIds = await ensureFlaggedNationalityIdsFileExists(nationalityIdFilePath);
-
   if (!flaggedNationalityIds) {
     ora().fail(
       `The file at ${nationalityIdFilePath} is either missing or contains data in an unexpected format. Please ensure the file exists and adheres to the required structure.`,
@@ -120,7 +108,6 @@ export async function createOrdersAction({ file }: CreateOrdersActionArgs) {
   const spinner = ora('Creating orders...');
 
   const isAuthenticated = await getIsAuthenticated();
-
   if (!isAuthenticated) {
     spinner.info(
       'You must be logged in to perform this task. Please use the login command to authenticate.',
@@ -130,7 +117,6 @@ export async function createOrdersAction({ file }: CreateOrdersActionArgs) {
 
   const ordersFilePath = path.resolve(file);
   const flaggedOrders = await ensureFlaggedOrdersFileExists(ordersFilePath);
-
   if (!flaggedOrders) {
     spinner.fail(
       `The file at ${ordersFilePath} is either missing or contains data in an unexpected format. Please ensure the file exists and adheres to the required structure.`,
@@ -149,7 +135,6 @@ export async function generateOrdersFromQuotasAction({
   const spinner = ora('Generating orders...').start();
 
   const { data: quotasFile, error: readError } = await tryCatch(readFileAsync(QUOTAS_FILE_PATH));
-
   if (readError) {
     spinner.fail(
       `Failed to read quotas file at ${QUOTAS_FILE_PATH}. Please ensure the file exists and is accessible.`,
@@ -158,17 +143,16 @@ export async function generateOrdersFromQuotasAction({
   }
 
   const quotas = quotasSchema.parse(quotasFile);
-
-  await writeFileAsync(ORDERS_FILE_PATH, generateOrdersFromQuotas({ quotas, quantity }));
-
+  await writeFileAsync(
+    ORDERS_FILE_PATH,
+    OrderCreationService.generateOrdersFromQuotas({ quotas, orderQuantity: quantity }),
+  );
   spinner.succeed('Generate orders completed successfully.');
 }
 
 export async function clearDataAction() {
   const spinner = ora('Clearing data...').start();
-
-  await deleteFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH);
-  await deleteFileAsync(FLAGGED_ORDERS_FILE_PATH);
-
+  await tryCatch(deleteFileAsync(FLAGGED_NATIONALITY_IDS_FILE_PATH));
+  await tryCatch(deleteFileAsync(FLAGGED_ORDERS_FILE_PATH));
   spinner.succeed('Clear data completed successfully.');
 }

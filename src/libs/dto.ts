@@ -1,19 +1,21 @@
 import Customer from '../models/customer.ts';
+import type { CustomerConstructorArgs } from '../types/constructor.ts';
 import type {
-  CustomerArgs,
-  CustomerResponseToCustomerArgs,
-  QuotaResponseToQuotaAllocationArgs,
-  TransactionResponseToTransactionArgs,
-} from './args.ts';
+  MapCustomerResponseToCustomerArgs,
+  MapQuotaResponseToQuotaArgs,
+  MapQuotaToOrderArgs,
+  MapTransactionResponseToTransactionArgs,
+} from '../types/lib.ts';
 import type {
   CustomerType,
+  Order,
   Profile,
   ProfileResponse,
-  QuotaAllocation,
+  Quota,
   Transaction,
-} from './types.ts';
+} from '../types/model.ts';
 
-export function profileRecordToProfile({ data }: ProfileResponse): Profile {
+export function mapProfileRecordToProfile({ data }: ProfileResponse): Profile {
   return {
     nationalityId: data.nationalityId,
     registrationId: data.registrationId,
@@ -22,11 +24,11 @@ export function profileRecordToProfile({ data }: ProfileResponse): Profile {
   };
 }
 
-export function customerResponseToCustomer({
+export function mapCustomerResponseToCustomer({
   customerResponse: { data },
   profile,
-}: CustomerResponseToCustomerArgs): Customer {
-  const customerArgs: CustomerArgs = {
+}: MapCustomerResponseToCustomerArgs): Customer {
+  const args: CustomerConstructorArgs = {
     nationalityId: data.nationalityId,
     encryptedFamilyId: data.familyIdEncrypted,
     customerTypes: data.customerTypes.map((customerType) => ({
@@ -46,33 +48,51 @@ export function customerResponseToCustomer({
     profile,
   };
 
-  const customer = new Customer(customerArgs);
-
-  return customer;
+  return new Customer(args);
 }
 
-export function quotaResponseToQuotaAllocation({
+export function mapQuotaResponseToQuota({
   quotaResponse: { data },
+  nationalityId,
   customerType,
   isValid,
-}: QuotaResponseToQuotaAllocationArgs): QuotaAllocation {
+}: MapQuotaResponseToQuotaArgs): Quota {
   return {
+    nationalityId,
     customerType,
     quantity: data.quotaRemaining.daily,
     isValid,
   };
 }
 
-export function transactionResponseToTransaction({
+export function mapTransactionResponseToTransaction({
   transactionResponse: { data },
-  order,
-}: TransactionResponseToTransactionArgs): Transaction {
+  nationalityId,
+  customerType,
+  orderQuantity,
+}: MapTransactionResponseToTransactionArgs): Transaction {
   return {
     id: data.transactionId,
-    order,
-    allocation: {
-      customerType: order.customerType,
+    nationalityId,
+    customerType,
+    order: {
+      quantity: orderQuantity,
+    },
+    quota: {
       quantity: data.quotaRemaining ?? 0,
     },
+  };
+}
+
+export function mapQuotaToOrder({
+  nationalityId,
+  customerType,
+  quotaQuantity,
+  orderQuantity,
+}: MapQuotaToOrderArgs): Order {
+  return {
+    nationalityId,
+    customerType,
+    quantity: Math.min(quotaQuantity, orderQuantity),
   };
 }

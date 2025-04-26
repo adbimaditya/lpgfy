@@ -16,14 +16,11 @@ export const profileSchema = z.object({
   name: z.string(),
 });
 
-export const quotaAllocationSchema = z.object({
+export const quotaSchema = z.object({
+  nationalityId: nationalityIdSchema,
   customerType: customerTypeSchema,
   quantity: z.number(),
   isValid: z.boolean(),
-});
-export const quotaSchema = z.object({
-  nationalityId: nationalityIdSchema,
-  allocations: z.array(quotaAllocationSchema),
 });
 export const quotasSchema = z.array(quotaSchema);
 
@@ -38,7 +35,9 @@ export const flaggedOrdersSchema = z.array(flaggedOrderSchema);
 
 export const transactionSchema = z.object({
   id: z.string(),
-  order: orderSchema,
-  allocation: quotaAllocationSchema.pick({ customerType: true, quantity: true }),
+  nationalityId: nationalityIdSchema,
+  customerType: customerTypeSchema,
+  order: orderSchema.pick({ quantity: true }),
+  quota: quotaSchema.pick({ quantity: true }),
 });
 export const transactionsSchema = z.array(transactionSchema);

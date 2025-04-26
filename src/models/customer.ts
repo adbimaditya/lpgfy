@@ -1,14 +1,10 @@
-import type { CustomerArgs } from '../libs/args.ts';
-import type { CustomerFlags, CustomerType, Profile } from '../libs/types.ts';
+import type { CustomerConstructorArgs } from '../types/constructor.ts';
+import type { CustomerFlags, CustomerType, CustomerTypeDetails, Profile } from '../types/model.ts';
 
 export default class Customer {
   private readonly nationalityId: string;
   private readonly encryptedFamilyId?: string;
-  private readonly types: {
-    name: CustomerType;
-    mid: string | null;
-    isQuotaValid: boolean;
-  }[];
+  private readonly types: CustomerTypeDetails[];
   private readonly flags: CustomerFlags;
   private readonly baseProfile: Profile;
 
@@ -18,7 +14,7 @@ export default class Customer {
     customerTypes,
     customerFlags,
     profile,
-  }: CustomerArgs) {
+  }: CustomerConstructorArgs) {
     this.nationalityId = nationalityId;
     this.encryptedFamilyId = encryptedFamilyId;
     this.types = customerTypes;
@@ -56,7 +52,6 @@ export default class Customer {
 
   public hasValidQuotaForSelectedCustomerType(customerType: CustomerType) {
     const selectedCustomerType = this.types.find((type) => type.name === customerType);
-
     return !!selectedCustomerType && selectedCustomerType.isQuotaValid;
   }
 }

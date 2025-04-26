@@ -1,6 +1,11 @@
-import { type BrowserContextOptions, chromium, type LaunchOptions } from '@playwright/test';
+import {
+  type Browser,
+  type BrowserContextOptions,
+  chromium,
+  type LaunchOptions,
+} from '@playwright/test';
 
-import type { CloseBrowserArgs, CloseBrowserOnErrorArgs, CreateBrowserArgs } from './args.ts';
+import type { CloseBrowserOnErrorArgs, CreateBrowserArgs } from '../types/lib.ts';
 import { playwrightLogger } from './logger.ts';
 import { tryCatch } from './utils.ts';
 
@@ -9,7 +14,7 @@ export async function createBrowser({
   browserContextOptions = {},
 }: CreateBrowserArgs = {}) {
   const defaultLaunchOptions: LaunchOptions = {
-    headless: false,
+    headless: true,
     args: ['--start-maximized'],
     logger: playwrightLogger,
     ...launchOptions,
@@ -27,13 +32,9 @@ export async function createBrowser({
   return { browser, context, page };
 }
 
-export async function closeBrowser({ browser }: CloseBrowserArgs) {
-  const contexts = browser.contexts();
-
-  for (const context of contexts) {
-    const pages = context.pages();
-
-    for (const page of pages) {
+export async function closeBrowser(browser: Browser) {
+  for (const context of browser.contexts()) {
+    for (const page of context.pages()) {
       await page.close();
     }
 
@@ -45,8 +46,7 @@ export async function closeBrowser({ browser }: CloseBrowserArgs) {
 
 export async function closeBrowserOnError({ browser, callback }: CloseBrowserOnErrorArgs) {
   const { error } = await tryCatch(callback());
-
   if (error) {
-    await closeBrowser({ browser });
+    await closeBrowser(browser);
   }
 }
